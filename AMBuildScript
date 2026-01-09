@@ -318,7 +318,7 @@ class AMXXConfig(object):
 
   def configure_linux(self, cxx):
     cxx.defines += ['_LINUX', 'POSIX', 'LINUX']
-    cxx.linkflags  += ['-ldl', '-lm']
+    cxx.linkflags  += ['-ldl', '-lm', '-z', 'noexecstack']
     if cxx.vendor == 'gcc':
       cxx.linkflags  += ['-static-libgcc']
     elif cxx.vendor == 'clang':
