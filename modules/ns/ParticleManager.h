@@ -19,7 +19,7 @@
 
 typedef struct psystem_s
 {
-	AString		 Name;
+	ke::AString		 Name;
 	int				 id;
 	int				 IsStatic; // Set to 1 if the particle system is loaded from ns.ps
 
@@ -28,7 +28,7 @@ typedef struct psystem_s
 class ParticleManager
 {
 private:
-	Vector<ParticleSystem *>	Systems;
+	ke::Vector<ParticleSystem *>	Systems;
 	int								m_iFileLoaded;
 	unsigned short					m_iEventID;
 
