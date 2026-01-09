@@ -13,7 +13,9 @@
 
 #ifndef RANK_H
 #define RANK_H
-#define MAX_REG_MSGS 255
+#ifndef MAX_REG_MSGS
+#define MAX_REG_MSGS 256
+#endif
 
 #include "amxxmodule.h"
 #include "CMisc.h"
