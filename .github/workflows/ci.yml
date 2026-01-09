@@ -44,12 +44,6 @@ jobs:
             compiler_install: 'gcc-11-multilib g++-11-multilib'
             metamod_variant: rehlds
             metamod_repo: https://github.com/rehlds/Metamod-R
-          # Windows build
-          - os: windows-2022
-            os_short: windows
-            compiler_cc: msvc
-            metamod_variant: standard
-            metamod_repo: https://github.com/alliedmodders/metamod-hl1
       fail-fast: false
     runs-on: ${{ matrix.os }}
     name: ${{ matrix.os_short }}-${{ matrix.compiler_cc }}-${{ matrix.metamod_variant }}
@@ -72,7 +66,6 @@ jobs:
           python3 -m pip install --upgrade pip setuptools wheel
           python3 --version
       - name: Install AMXModX dependencies (Linux)
-        if: startsWith(runner.os, 'Linux')
         shell: bash
         run: |
           mkdir -p ${{ env.DEPENDENCIES_FOLDER }}
@@ -84,7 +77,12 @@ jobs:
           # Clone metamod based on variant
           if [ "${{ matrix.metamod_variant }}" = "rehlds" ]; then
             echo "Using Metamod-R for ReHLDS testing"
-            git clone ${{ matrix.metamod_repo }} metamod-am
+            git clone ${{ matrix.metamod_repo }} metamod-r-temp
+            # Metamod-R has headers in metamod/src/, need to restructure
+            mkdir -p metamod-am/metamod
+            cp -r metamod-r-temp/metamod/src/* metamod-am/metamod/
+            cp -r metamod-r-temp/metamod/extra metamod-am/metamod/ 2>/dev/null || true
+            rm -rf metamod-r-temp
           else
             echo "Using standard AlliedModders Metamod"
             git clone ${{ matrix.metamod_repo }} metamod-am
@@ -103,31 +101,7 @@ jobs:
           tar zxf mysql-5.5.57-linux-glibc2.12-i686.tar.gz
           mv mysql-5.5.57-linux-glibc2.12-i686 mysql-5.5          
       - name: Install AMXModX dependencies (Windows)
-        if: startsWith(runner.os, 'Windows')
-        shell: cmd
-        run: |
-          mkdir %DEPENDENCIES_ROOT_WIN%\nasm
-          curl -L -o "%DEPENDENCIES_ROOT_WIN%\nasm\nasm.zip" https://www.nasm.us/pub/nasm/releasebuilds/2.13.03/win32/nasm-2.13.03-win32.zip
-          chdir %DEPENDENCIES_ROOT_WIN%\nasm
-          7z x nasm.zip
-          
-          chdir %DEPENDENCIES_ROOT_WIN%
-          git clone https://github.com/alliedmodders/ambuild
-          git clone ${{ matrix.metamod_repo }} metamod-am
-          git clone https://github.com/alliedmodders/hlsdk
-          
-          curl -L -o "mysql-connector-c-6.1.1-win32.zip" https://downloads.mysql.com/archives/get/p/19/file/mysql-connector-c-6.1.1-win32.zip
-          7z x mysql-connector-c-6.1.1-win32.zip -o"mysql"
-          cd mysql
-          dir
-          ren mysql-connector-c-6.1.1-win32 mysql-5.5
-          move /Y mysql-5.5 ..\
-          
-          cd ..\ambuild
-          python3 setup.py install          
-      - name: Install Linux dependencies
-        if: startsWith(runner.os, 'Linux')
-        run: |
+        if: startsWithLinux dependencies
           sudo dpkg --add-architecture i386
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
@@ -149,31 +123,9 @@ jobs:
           mkdir build
           cd build
           python3 ../configure.py --enable-optimize --metamod=${{ env.DEPENDENCIES_ROOT }}/metamod-am --hlsdk=${{ env.DEPENDENCIES_ROOT }}/hlsdk --mysql=${{ env.DEPENDENCIES_ROOT }}/mysql-5.5
-          ambuild
-      - name: Upload Linux artifacts
-        if: startsWith(runner.os, 'Linux') && always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: amxmodx-${{ matrix.metamod_variant }}-${{ matrix.os_short }}-${{ matrix.compiler_cc }}-${{ github.sha }}
-          path: amxmodx/build/packages/
-          retention-days: 7
-      - uses: ilammy/msvc-dev-cmd@v1
-        with:
-          arch: x86
-      - name: Build Windows
-        if: startsWith(runner.os, 'Windows')
         working-directory: amxmodx
-        shell: cmd
         run: |
-          cl.exe
-          mkdir build
-          cd build
-          python3 ../configure.py --enable-optimize --metamod=${{ env.DEPENDENCIES_ROOT_WIN }}\metamod-am --hlsdk=${{ env.DEPENDENCIES_ROOT_WIN }}\hlsdk --mysql=${{ env.DEPENDENCIES_ROOT_WIN }}\mysql-5.5
-          ambuild
-      - name: Upload Windows artifacts
-        if: startsWith(runner.os, 'Windows') && always()
-        uses: actions/upload-artifact@v4
-        with:
+          mk
           name: amxmodx-${{ matrix.metamod_variant }}-${{ matrix.os_short }}-${{ matrix.compiler_cc }}-${{ github.sha }}
           path: amxmodx/build/packages/
           retention-days: 7

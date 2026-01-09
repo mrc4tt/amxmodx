@@ -60,19 +60,6 @@ jobs:
             metamod_variant: rehlds
             metamod_repo: https://github.com/rehlds/Metamod-R
             metamod_branch: master
-          # Windows builds (both variants)
-          - os: windows-2022
-            os_short: windows
-            compiler_cc: msvc
-            metamod_variant: standard
-            metamod_repo: https://github.com/alliedmodders/metamod-hl1
-            metamod_branch: master
-          - os: windows-2022
-            os_short: windows
-            compiler_cc: msvc
-            metamod_variant: rehlds
-            metamod_repo: https://github.com/rehlds/Metamod-R
-            metamod_branch: master
       fail-fast: false
     runs-on: ${{ matrix.os }}
     outputs:
@@ -138,7 +125,12 @@ jobs:
           # Clone metamod based on variant
           if [ "${{ matrix.metamod_variant }}" = "rehlds" ]; then
             echo "Cloning Metamod-R for ReHLDS optimized build"
-            git clone ${{ matrix.metamod_repo }} -b ${{ matrix.metamod_branch }} metamod-am
+            git clone ${{ matrix.metamod_repo }} -b ${{ matrix.metamod_branch }} metamod-r-temp
+            # Metamod-R has headers in metamod/src/, need to restructure
+            mkdir -p metamod-am/metamod
+            cp -r metamod-r-temp/metamod/src/* metamod-am/metamod/
+            cp -r metamod-r-temp/metamod/extra metamod-am/metamod/ 2>/dev/null || true
+            rm -rf metamod-r-temp
           else
             echo "Cloning standard AlliedModders Metamod"
             git clone ${{ matrix.metamod_repo }} -b ${{ matrix.metamod_branch }} metamod-am
@@ -171,30 +163,7 @@ jobs:
           git clone https://github.com/alliedmodders/ambuild
           git clone ${{ matrix.metamod_repo }} -b ${{ matrix.metamod_branch }} metamod-am
           git clone https://github.com/alliedmodders/hlsdk
-          
-          curl -L -o "mysql-connector-c-6.1.1-win32.zip" https://downloads.mysql.com/archives/get/p/19/file/mysql-connector-c-6.1.1-win32.zip
-          7z x mysql-connector-c-6.1.1-win32.zip -o"mysql"
-          cd mysql
-          ren mysql-connector-c-6.1.1-win32 mysql-5.5
-          move /Y mysql-5.5 ..\
-          
-          cd ..\ambuild
-          python3 setup.py install
-
-      - name: Setup NASM (Windows/Linux)
-        uses: ilammy/setup-nasm@v1
-
-      - name: Build (Linux)
-        if: startsWith(runner.os, 'Linux')
-        working-directory: amxmodx
-        run: |
-          mkdir build
-          cd build
-          python3 ../configure.py --enable-optimize \
-            --metamod=${{ env.DEPENDENCIES_ROOT }}/metamod-am \
-            --hlsdk=${{ env.DEPENDENCIES_ROOT }}/hlsdk \
-            --mysql=${{ env.DEPENDENCIES_ROOT }}/mysql-5.5
-          ambuild
+          Setup NASM (
 
       - name: Setup MSVC Dev Environment
         if: startsWith(runner.os, 'Windows')
@@ -208,34 +177,14 @@ jobs:
         shell: cmd
         run: |
           mkdir build
-          cd build
-          python3 ../configure.py --enable-optimize ^
-            --metamod=%DEPENDENCIES_ROOT%\metamod-am ^
-            --hlsdk=%DEPENDENCIES_ROOT%\hlsdk ^
-            --mysql=%DEPENDENCIES_ROOT%\mysql-5.5
-          ambuild
-
-      - name: Create version file
-        shell: bash
+        working-directory: amxmodx
         run: |
-          echo "${{ steps.version.outputs.version }}" > amxmodx/build/product.version
-
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: amxmodx-${{ steps.version.outputs.version }}-${{ matrix.metamod_variant }}-${{ matrix.os_short }}-${{ matrix.compiler_cc }}
-          path: |
-            amxmodx/build/packages/
-            amxmodx/build/product.version
-          retention-days: 30
-
-  create-release:
-    name: Create Release
-    needs: build
-    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
+          mkdir build
+          cd build
+          python3 ../configure.py --enable-optimize \
+            --metamod=${{ env.DEPENDENCIES_ROOT }}/metamod-am \
+            --hlsdk=${{ env.DEPENDENCIES_ROOT }}/hlsdk \
+            --mysql=${{ env.DEPENDENCIES_ROOT }}/
     
     steps:
       - name: Download all artifacts
@@ -354,20 +303,16 @@ jobs:
             
             **Base Package:**
             - **amxmodx-${{ steps.version_info.outputs.version }}-base-linux-rehlds.tar.gz** - Linux Base Package (ReHLDS)
-            - **amxmodx-${{ steps.version_info.outputs.version }}-base-windows-rehlds.zip** - Windows Base Package (ReHLDS)
             
             **Counter-Strike Addon:**
             - **amxmodx-${{ steps.version_info.outputs.version }}-cstrike-linux-rehlds.tar.gz** - Linux CS Package (ReHLDS)
-            - **amxmodx-${{ steps.version_info.outputs.version }}-cstrike-windows-rehlds.zip** - Windows CS Package (ReHLDS)
             
             ### Other Game Addons
             Additional game-specific packages are available in both standard and ReHLDS variants.
             
-            ## Installation
             
-            **Choose your build variant:**
-            - **Standard Build**: For vanilla HLDS or if unsure
-            - **ReHLDS Build**: For servers running ReHLDS (recommended for better performance)
+            **Counter-Strike Addon:**
+            - **amxmodx-${{ steps.version_info.outputs.version }}-cstrike-linux.tar.gz** - Linux
             
             **Steps:**
             1. Download the base package for your platform and metamod variant
