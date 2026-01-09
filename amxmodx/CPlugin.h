@@ -15,7 +15,6 @@
 #include "amxxfile.h"
 #include <amtl/am-string.h>
 #include <amtl/am-vector.h>
-#include <amtl/am-autoptr.h>
 
 // *****************************************************
 // class CPluginMngr

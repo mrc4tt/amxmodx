@@ -62,7 +62,7 @@ public:
 	};
 	inline void CheckMap(void)
 	{
-		ke::AString MapName;
+		AString MapName;
 
 		MapName = UTIL_ToLowerCase(STRING(gpGlobals->mapname));
 
