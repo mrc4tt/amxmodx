@@ -121,7 +121,7 @@ const char* get_localinfo( const char* name , const char* def = 0 )
 {
 	const char* b = GET_LOCALINFO( (char*)name );
 	if (((b==0)||(*b==0)) && def )
-		SET_LOCALINFO((char*)name,(char*)(b = def) );
+		SET_GET_LOCALINFO((char*)name,(char*)(b = def) );
 	return b;
 }
 

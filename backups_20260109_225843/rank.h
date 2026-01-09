@@ -117,51 +117,61 @@ void Client_DeathMsg(void*);
 bool ignoreBots (edict_t *pEnt, edict_t *pOther = NULL );
 bool isModuleActive();
 
-
-// Insert after existing defines, around line 118
-#ifndef MAX_REG_MSGS
+#define CHECK_ENTITY(x) \
 #define MAX_REG_MSGS 255
-#endif
+	if (x < 0 || x > gpGlobals->maxEntities) { \
+		MF_LogError(amx, AMX_ERR_NATIVE, "Entity out of range (%d)", x); \
+		return 0; \
+	} else { \
+		if (x <= gpGlobals->maxClients) { \
+			if (!MF_IsPlayerIngame(x)) { \
+				MF_LogError(amx, AMX_ERR_NATIVE, "Invalid player %d (not in-game)", x); \
+				return 0; \
+			} \
+		} else { \
+			if (x != 0 && FNullEnt(INDEXENT(x))) { \
+				MF_LogError(amx, AMX_ERR_NATIVE, "Invalid entity %d", x); \
+				return 0; \
+			} \
+		} \
+	}
 
-#define CHECK_ENTITY(x) \\
-    if (x < 0 || x > gpGlobals->maxEntities) { \\
-        MF_LogError(amx, AMX_ERR_NATIVE, "Entity out of range (%d)", x); \\
-        return 0; \\
-    } else { \\
-        if (x != 0 && FNullEnt(INDEXENT(x))) { \\
-            MF_LogError(amx, AMX_ERR_NATIVE, "Invalid entity %d", x); \\
-            return 0; \\
-        } \\
-    }
+#define CHECK_PLAYER(x) \
+#define MAX_REG_MSGS 255
+	if (x < 1 || x > gpGlobals->maxClients) { \
+		MF_LogError(amx, AMX_ERR_NATIVE, "Player out of range (%d)", x); \
+		return 0; \
+	} else { \
+		if (!MF_IsPlayerIngame(x) || FNullEnt(MF_GetPlayerEdict(x))) { \
+			MF_LogError(amx, AMX_ERR_NATIVE, "Invalid player %d", x); \
+			return 0; \
+		} \
+	}
 
-#define CHECK_PLAYER(x) \\
-    if (x < 1 || x > gpGlobals->maxClients) { \\
-        MF_LogError(amx, AMX_ERR_NATIVE, "Player out of range (%d)", x); \\
-        return 0; \\
-    } else { \\
-        if (!MF_IsPlayerIngame(x)) { \\
-            MF_LogError(amx, AMX_ERR_NATIVE, "Invalid player %d (not in-game)", x); \\
-            return 0; \\
-        } \\
-    }
+#define CHECK_PLAYERRANGE(x) \
+#define MAX_REG_MSGS 255
+	if (x > gpGlobals->maxClients || x < 0) \
+	{ \
+		MF_LogError(amx, AMX_ERR_NATIVE, "Player out of range (%d)", x); \
+		return 0; \
+	}
 
-#define CHECK_PLAYERRANGE(x) \\
-    if (x > gpGlobals->maxClients || x < 0) \\
-        return 0;
+#define CHECK_NONPLAYER(x) \
+#define MAX_REG_MSGS 255
+	if (x < 1 || x <= gpGlobals->maxClients || x > gpGlobals->maxEntities) { \
+		MF_LogError(amx, AMX_ERR_NATIVE, "Non-player entity %d out of range", x); \
+		return 0; \
+	} else { \
+		if (FNullEnt(INDEXENT(x))) { \
+			MF_LogError(amx, AMX_ERR_NATIVE, "Invalid non-player entity %d", x); \
+			return 0; \
+		} \
+	}
 
-#define CHECK_NONPLAYER(x) \\
-    if (x < 1 || x <= gpGlobals->maxClients || x > gpGlobals->maxEntities) { \\
-        MF_LogError(amx, AMX_ERR_NATIVE, "Non-player entity %d out of range", x); \\
-        return 0; \\
-    } else { \\
-        if (FNullEnt(INDEXENT(x))) { \\
-            MF_LogError(amx, AMX_ERR_NATIVE, "Invalid non-player entity %d", x); \\
-            return 0; \\
-        } \\
-    }
+#define GETEDICT(n) \
+#define MAX_REG_MSGS 255
+	((n >= 1 && n <= gpGlobals->maxClients) ? MF_GetPlayerEdict(n) : INDEXENT(n))
 
-#define GETEDICT(n) \\
-    ((n >= 1 && n <= gpGlobals->maxClients) ? MF_GetPlayerEdict(n) : INDEXENT(n))
 #endif // RANK_H
 
 
