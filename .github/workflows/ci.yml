@@ -99,33 +99,38 @@ jobs:
           # Download MySQL
           curl -L -o "mysql-5.5.57-linux-glibc2.12-i686.tar.gz" http://cdn.mysql.com/archives/mysql-5.5/mysql-5.5.57-linux-glibc2.12-i686.tar.gz
           tar zxf mysql-5.5.57-linux-glibc2.12-i686.tar.gz
-          mv mysql-5.5.57-linux-glibc2.12-i686 mysql-5.5          
-      - name: Install AMXModX dependencies (Windows)
-        if: startsWithLinux dependencies
+          mv mysql-5.5.57-linux-glibc2.12-i686 mysql-5.5
+          
+      - name: Install Linux dependencies
+        run: |
           sudo dpkg --add-architecture i386
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             gcc-multilib g++-multilib libstdc++6 lib32stdc++6 \
             libc6-dev libc6-dev-i386 linux-libc-dev \
             linux-libc-dev:i386 lib32z1-dev nasm ${{ matrix.compiler_cc }} ${{ matrix.compiler_install }}
+            
       - name: Select compiler
-        if: startsWith(runner.os, 'Linux')
         run: |
           echo "CC=${{ matrix.compiler_cc }}" >> $GITHUB_ENV
           echo "CXX=${{ matrix.compiler_cxx }}" >> $GITHUB_ENV
           ${{ matrix.compiler_cc }} --version
           ${{ matrix.compiler_cxx }} --version
+          
       - uses: ilammy/setup-nasm@v1
+      
       - name: Build Linux
-        if: startsWith(runner.os, 'Linux')
         working-directory: amxmodx
         run: |
           mkdir build
           cd build
           python3 ../configure.py --enable-optimize --metamod=${{ env.DEPENDENCIES_ROOT }}/metamod-am --hlsdk=${{ env.DEPENDENCIES_ROOT }}/hlsdk --mysql=${{ env.DEPENDENCIES_ROOT }}/mysql-5.5
-        working-directory: amxmodx
-        run: |
-          mk
+          ambuild
+          
+      - name: Upload Linux artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
           name: amxmodx-${{ matrix.metamod_variant }}-${{ matrix.os_short }}-${{ matrix.compiler_cc }}-${{ github.sha }}
           path: amxmodx/build/packages/
           retention-days: 7
