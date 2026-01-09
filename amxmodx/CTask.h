@@ -8,6 +8,7 @@
 //     https://alliedmods.net/amxmodx-license
 
 #ifndef CTASK_H
+#include <memory>
 #define CTASK_H
 
 class CTaskMngr
@@ -62,7 +63,7 @@ private:
 	};
 
 	/*** CTaskMngr priv members ***/
-	ke::Vector<ke::AutoPtr<CTask>> m_Tasks;
+	ke::Vector<std::unique_ptr<CTask>> m_Tasks;
 	
 	float *m_pTmr_CurrentTime;
 	float *m_pTmr_TimeLimit;

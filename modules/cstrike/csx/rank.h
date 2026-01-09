@@ -13,13 +13,16 @@
 
 #ifndef RANK_H
 #define RANK_H
+#define MAX_REG_MSGS 255
 
 #include "amxxmodule.h"
 #include "CMisc.h"
 #include "CRank.h"
 
 #define GET_PLAYER_POINTER(e)   (&players[ENTINDEX(e)])
+#define MAX_REG_MSGS 255
 #define GET_PLAYER_POINTER_I(i) (&players[i])
+#define MAX_REG_MSGS 255
 
 extern AMX_NATIVE_INFO stats_Natives[];
 
@@ -50,10 +53,15 @@ extern int g_Planter;
 extern int g_Defuser;
 
 #define BOMB_PLANTING	1
+#define MAX_REG_MSGS 255
 #define BOMB_PLANTED	2
+#define MAX_REG_MSGS 255
 #define BOMB_EXPLODE	3
+#define MAX_REG_MSGS 255
 #define BOMB_DEFUSING	4
+#define MAX_REG_MSGS 255
 #define BOMB_DEFUSED	5
+#define MAX_REG_MSGS 255
 
 extern weaponsVault weaponData[MAX_WEAPONS+MAX_CWEAPONS];
 
@@ -110,6 +118,7 @@ bool ignoreBots (edict_t *pEnt, edict_t *pOther = NULL );
 bool isModuleActive();
 
 #define CHECK_ENTITY(x) \
+#define MAX_REG_MSGS 255
 	if (x < 0 || x > gpGlobals->maxEntities) { \
 		MF_LogError(amx, AMX_ERR_NATIVE, "Entity out of range (%d)", x); \
 		return 0; \
@@ -128,6 +137,7 @@ bool isModuleActive();
 	}
 
 #define CHECK_PLAYER(x) \
+#define MAX_REG_MSGS 255
 	if (x < 1 || x > gpGlobals->maxClients) { \
 		MF_LogError(amx, AMX_ERR_NATIVE, "Player out of range (%d)", x); \
 		return 0; \
@@ -139,6 +149,7 @@ bool isModuleActive();
 	}
 
 #define CHECK_PLAYERRANGE(x) \
+#define MAX_REG_MSGS 255
 	if (x > gpGlobals->maxClients || x < 0) \
 	{ \
 		MF_LogError(amx, AMX_ERR_NATIVE, "Player out of range (%d)", x); \
@@ -146,6 +157,7 @@ bool isModuleActive();
 	}
 
 #define CHECK_NONPLAYER(x) \
+#define MAX_REG_MSGS 255
 	if (x < 1 || x <= gpGlobals->maxClients || x > gpGlobals->maxEntities) { \
 		MF_LogError(amx, AMX_ERR_NATIVE, "Non-player entity %d out of range", x); \
 		return 0; \
@@ -157,6 +169,7 @@ bool isModuleActive();
 	}
 
 #define GETEDICT(n) \
+#define MAX_REG_MSGS 255
 	((n >= 1 && n <= gpGlobals->maxClients) ? MF_GetPlayerEdict(n) : INDEXENT(n))
 
 #endif // RANK_H

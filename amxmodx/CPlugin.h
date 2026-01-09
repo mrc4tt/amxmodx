@@ -15,6 +15,7 @@
 #include "amxxfile.h"
 #include <amtl/am-string.h>
 #include <amtl/am-vector.h>
+#include <memory>
 
 // *****************************************************
 // class CPluginMngr
@@ -73,7 +74,7 @@ public:
 		bool m_Debug;
 		cell* m_pNullStringOfs;
 		cell* m_pNullVectorOfs;
-		ke::Vector<ke::AutoPtr<AutoConfig>> m_configs;
+		ke::Vector<std::unique_ptr<AutoConfig>> m_configs;
 	public:
 		inline const char* getName() { return name.chars();}
 		inline const char* getVersion() { return version.chars();}

@@ -263,7 +263,7 @@ const char *getLang(int playerIndex)
 		}
 		else
 		{
-			value = ENTITY_KEYVALUE(MF_GetPlayerEdict(playerIndex), "lang");
+			value = INFOKEY_VALUE(MF_GetPlayerEdict(playerIndex), "lang");
 		}
 
 		if (value && *value)
