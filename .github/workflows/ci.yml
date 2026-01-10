@@ -19,10 +19,7 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: ubuntu-22.04
-            os_short: linux
-            compiler_cc: clang-11
-            compiler_cxx: clang++-11
+          # Only keep ONE Linux compiler to avoid duplicate package names
           - os: ubuntu-22.04
             os_short: linux
             compiler_cc: gcc-9
@@ -138,7 +135,7 @@ jobs:
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           
-          # Create dist directory in root
+          # Create dist directory FØRST
           mkdir -p dist
           
           cd build/packages
@@ -167,7 +164,7 @@ jobs:
         if: startsWith(runner.os, 'Linux') && always()
         uses: actions/upload-artifact@v4
         with:
-          name: amxmodx-${{ matrix.os_short }}-${{ matrix.compiler_cc }}-${{ github.sha }}
+          name: amxmodx-${{ matrix.os_short }}-${{ github.sha }}
           path: amxmodx/dist/*.tar.gz
           retention-days: 7
       
@@ -193,7 +190,7 @@ jobs:
         run: |
           $VERSION = "${{ steps.version.outputs.version }}"
           
-          # Create dist directory in root
+          # Create dist directory FØRST
           New-Item -ItemType Directory -Force -Path dist | Out-Null
           
           Set-Location build\packages
@@ -224,7 +221,7 @@ jobs:
         if: startsWith(runner.os, 'Windows') && always()
         uses: actions/upload-artifact@v4
         with:
-          name: amxmodx-${{ matrix.os_short }}-${{ matrix.compiler_cc }}-${{ github.sha }}
+          name: amxmodx-${{ matrix.os_short }}-${{ github.sha }}
           path: amxmodx/dist/*.zip
           retention-days: 7
 
