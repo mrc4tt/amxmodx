@@ -138,14 +138,19 @@ jobs:
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           
+          # Create dist directory in root
           mkdir -p dist
+          
           cd build/packages
           
           for pkg in base cstrike dod esf ns tfc ts; do
             if [ -d "$pkg" ]; then
               echo "=== Packaging $pkg ==="
               cd "$pkg"
-              tar zcvf "../../dist/amxmodx-${VERSION}-${pkg}-linux.tar.gz" addons
+              
+              # Create tar in absolute path to dist
+              tar zcvf "$GITHUB_WORKSPACE/amxmodx/dist/amxmodx-${VERSION}-${pkg}-linux.tar.gz" addons
+              
               cd ..
               echo "✓ Created amxmodx-${VERSION}-${pkg}-linux.tar.gz"
             else
@@ -188,7 +193,9 @@ jobs:
         run: |
           $VERSION = "${{ steps.version.outputs.version }}"
           
-          New-Item -ItemType Directory -Force -Path dist
+          # Create dist directory in root
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+          
           Set-Location build\packages
           
           $packages = @('base', 'cstrike', 'dod', 'esf', 'ns', 'tfc', 'ts')
@@ -198,7 +205,7 @@ jobs:
               Write-Host "=== Packaging $pkg ==="
               Set-Location $pkg
               
-              $archiveName = "..\..\dist\amxmodx-$VERSION-$pkg-windows.zip"
+              $archiveName = "$env:GITHUB_WORKSPACE\amxmodx\dist\amxmodx-$VERSION-$pkg-windows.zip"
               Compress-Archive -Path addons -DestinationPath $archiveName -Force
               
               Set-Location ..
