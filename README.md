@@ -1,4 +1,4 @@
-
+> **⚠️ Fork Notice**: This is a fork of the official [AMX Mod X](https://github.com/alliedmodders/amxmodx) project, maintained by Miksen. For the original project, visit the [AlliedModders repository](https://github.com/alliedmodders/amxmodx).
 <p align="center">
  <img src="https://github.com/alliedmodders/amxmodx/blob/master/editor/studio/AMXXLarge.bmp"/>
 </p>

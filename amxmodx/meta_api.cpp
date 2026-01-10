@@ -41,7 +41,7 @@ plugin_info_t Plugin_info =
 	"AMX Mod X",				// name
 	AMXX_VERSION,			// version
 	__DATE__,					// date
-	"AMX Mod X Dev Team",		// author
+	"AMX Mod X Dev Team (Forked by Miksen)",		// author
 	"http://www.amxmodx.org",	// url
 	"AMXX",						// logtag
 	PT_STARTUP,					// (when) loadable
