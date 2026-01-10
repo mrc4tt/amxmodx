@@ -372,7 +372,8 @@
 		"CRC"
 		{
 			"server"
-			{
+			{				"linux" "3BE49C6F" // cstrike/dlls/cs.so
+
 				"windows" "6BF63A24" // cstrike/dlls/mp.dll
 				"windows" "BD938A62" // czero/dlls/mp.dll
 			}
