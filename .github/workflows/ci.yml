@@ -13,6 +13,9 @@ on:
      - 1.9-dev
 jobs:
   test:
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      git_commit_count: ${{ steps.version.outputs.git_commit_count }}
     strategy:
       matrix:
         include:
@@ -182,7 +185,7 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || format('dev-{0}', steps.ver.outputs.version) }}
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || format('v{0}', steps.ver.outputs.version) }}
           name: ${{ startsWith(github.ref, 'refs/tags/v') && format('AMX Mod X {0}', steps.ver.outputs.version) || format('AMX Mod X Dev Build {0}', steps.ver.outputs.version) }}
           body: |
             AMX Mod X automated build
