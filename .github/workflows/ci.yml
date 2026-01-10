@@ -46,12 +46,27 @@ jobs:
       DEPENDENCIES_FOLDER: dependencies      
       DEPENDENCIES_ROOT: ${{ github.workspace }}/dependencies      
       DEPENDENCIES_ROOT_WIN: ${{ github.workspace }}\dependencies              
+      REHLDS_CRC_OVERRIDES_URL: https://raw.githubusercontent.com/mrc4tt/ReHLDS/master/gamedata/custom/linux_crc_overrides.txt
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
           path: amxmodx
           fetch-depth: 0
+      - name: Sync CRC overrides from ReHLDS fork
+        shell: bash
+        run: |
+          set -e
+          SRC="${{ env.REHLDS_CRC_OVERRIDES_URL }}"
+          DEST="amxmodx/gamedata/custom/linux_crc_overrides.txt"
+          echo "Fetching CRC overrides from $SRC"
+          if curl -fL "$SRC" -o "$DEST.tmp"; then
+            mv "$DEST.tmp" "$DEST"
+            echo "Updated CRC overrides from ReHLDS fork"
+          else
+            echo "WARN: Could not fetch CRC overrides from $SRC; keeping existing file"
+            rm -f "$DEST.tmp"
+          fi
       - name: Compute version
         id: version
         working-directory: amxmodx
