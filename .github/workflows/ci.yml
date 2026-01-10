@@ -132,24 +132,38 @@ jobs:
           python3 ../configure.py --enable-optimize --metamod=${{ env.DEPENDENCIES_ROOT }}/metamod-am --hlsdk=${{ env.DEPENDENCIES_ROOT }}/hlsdk --mysql=${{ env.DEPENDENCIES_ROOT }}/mysql-5.5
           ambuild
       
-      - name: List built packages (Linux)
+      - name: Package Linux builds
         if: startsWith(runner.os, 'Linux')
-        working-directory: amxmodx/build
+        working-directory: amxmodx
         run: |
-          echo "=== Built packages ==="
-          find . -type f \( -name "*.tar.gz" -o -name "*.zip" \) | sort
+          VERSION="${{ steps.version.outputs.version }}"
+          
+          mkdir -p dist
+          cd build/packages
+          
+          for pkg in base cstrike dod esf ns tfc ts; do
+            if [ -d "$pkg" ]; then
+              echo "=== Packaging $pkg ==="
+              cd "$pkg"
+              tar zcvf "../../dist/amxmodx-${VERSION}-${pkg}-linux.tar.gz" addons
+              cd ..
+              echo "✓ Created amxmodx-${VERSION}-${pkg}-linux.tar.gz"
+            else
+              echo "⚠ Package directory not found: $pkg"
+            fi
+          done
+          
+          cd ../..
           echo ""
-          echo "=== Package directory structure ==="
-          ls -lhR packages/ 2>/dev/null || ls -lhR package/ 2>/dev/null || echo "No packages/ or package/ directory found"
+          echo "=== Final packages ==="
+          ls -lh dist/
       
       - name: Upload Linux artifacts
         if: startsWith(runner.os, 'Linux') && always()
         uses: actions/upload-artifact@v4
         with:
           name: amxmodx-${{ matrix.os_short }}-${{ matrix.compiler_cc }}-${{ github.sha }}
-          path: |
-            amxmodx/build/packages/
-            amxmodx/build/package/
+          path: amxmodx/dist/*.tar.gz
           retention-days: 7
       
       - uses: ilammy/msvc-dev-cmd@v1
@@ -167,25 +181,44 @@ jobs:
           python3 ../configure.py --enable-optimize --metamod=${{ env.DEPENDENCIES_ROOT_WIN }}\metamod-am --hlsdk=${{ env.DEPENDENCIES_ROOT_WIN }}\hlsdk --mysql=${{ env.DEPENDENCIES_ROOT_WIN }}\mysql-5.5
           ambuild
       
-      - name: List built packages (Windows)
+      - name: Package Windows builds
         if: startsWith(runner.os, 'Windows')
-        working-directory: amxmodx/build
-        shell: cmd
+        working-directory: amxmodx
+        shell: pwsh
         run: |
-          echo === Built packages ===
-          dir /s /b *.zip *.tar.gz 2>nul
-          echo.
-          echo === Package directory ===
-          dir packages\ 2>nul || dir package\ 2>nul || echo No packages directory found
+          $VERSION = "${{ steps.version.outputs.version }}"
+          
+          New-Item -ItemType Directory -Force -Path dist
+          Set-Location build\packages
+          
+          $packages = @('base', 'cstrike', 'dod', 'esf', 'ns', 'tfc', 'ts')
+          
+          foreach ($pkg in $packages) {
+            if (Test-Path $pkg) {
+              Write-Host "=== Packaging $pkg ==="
+              Set-Location $pkg
+              
+              $archiveName = "..\..\dist\amxmodx-$VERSION-$pkg-windows.zip"
+              Compress-Archive -Path addons -DestinationPath $archiveName -Force
+              
+              Set-Location ..
+              Write-Host "✓ Created amxmodx-$VERSION-$pkg-windows.zip"
+            } else {
+              Write-Host "⚠ Package directory not found: $pkg"
+            }
+          }
+          
+          Set-Location ..\..
+          Write-Host ""
+          Write-Host "=== Final packages ==="
+          Get-ChildItem dist\
       
       - name: Upload Windows artifacts
         if: startsWith(runner.os, 'Windows') && always()
         uses: actions/upload-artifact@v4
         with:
           name: amxmodx-${{ matrix.os_short }}-${{ matrix.compiler_cc }}-${{ github.sha }}
-          path: |
-            amxmodx/build/packages/
-            amxmodx/build/package/
+          path: amxmodx/dist/*.zip
           retention-days: 7
 
   create-release:
@@ -209,7 +242,7 @@ jobs:
           echo "=== Package files count ==="
           find artifacts -type f \( -name "*.tar.gz" -o -name "*.zip" \) | wc -l
           echo ""
-          echo "=== Package files list ==="
+          echo "=== Package files by name ==="
           find artifacts -type f \( -name "*.tar.gz" -o -name "*.zip" \) | sort
       
       - name: Determine version
@@ -236,7 +269,16 @@ jobs:
             Version: ${{ steps.ver.outputs.version }}
             Commit: ${{ github.sha }}
 
-            Attached are packaged artifacts from CI builds.
+            **Packages included:**
+            - Base (all games)
+            - Counter-Strike (cstrike)
+            - Day of Defeat (dod)
+            - Earth's Special Forces (esf)
+            - Natural Selection (ns)
+            - Team Fortress Classic (tfc)
+            - The Specialists (ts)
+
+            Each package is available for both Linux (.tar.gz) and Windows (.zip).
           files: |
             artifacts/**/*.tar.gz
             artifacts/**/*.zip
