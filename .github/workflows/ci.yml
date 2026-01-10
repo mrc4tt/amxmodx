@@ -5,6 +5,8 @@ on:
     branches:
      - master
      - 1.9-dev
+    tags:
+     - 'v*'
   pull_request:
     branches:
      - master
@@ -46,6 +48,16 @@ jobs:
         with:
           submodules: recursive
           path: amxmodx
+          fetch-depth: 0
+      - name: Compute version
+        id: version
+        working-directory: amxmodx
+        run: |
+          PRODUCT_VERSION=$(cat product.version)
+          GIT_COMMIT_COUNT=$(git rev-list --count HEAD)
+          VERSION="${PRODUCT_VERSION}.${GIT_COMMIT_COUNT}"
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "git_commit_count=${GIT_COMMIT_COUNT}" >> $GITHUB_OUTPUT
       # Setup Python for AMBuild
       - uses: actions/setup-python@v2
         name: Setup Python 3.9
@@ -141,3 +153,47 @@ jobs:
           name: amxmodx-${{ matrix.os_short }}-${{ matrix.compiler_cc }}-${{ github.sha }}
           path: amxmodx/build/packages/
           retention-days: 7
+
+  create-release:
+    name: Create Release
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Determine version
+        id: ver
+        run: |
+          # Prefer job output version if present
+          VERSION="${{ needs.test.outputs.version }}"
+          if [ -z "$VERSION" ]; then
+            # Fallback: compute from repository (requires checkout)
+            echo "No job output version; computing fallback version"
+            echo "1.10.0.0" > version.txt
+            VERSION=$(cat version.txt)
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || format('dev-{0}', steps.ver.outputs.version) }}
+          name: ${{ startsWith(github.ref, 'refs/tags/v') && format('AMX Mod X {0}', steps.ver.outputs.version) || format('AMX Mod X Dev Build {0}', steps.ver.outputs.version) }}
+          body: |
+            AMX Mod X automated build
+
+            Version: ${{ steps.ver.outputs.version }}
+            Commit: ${{ github.sha }}
+
+            Attached are packaged artifacts from CI builds.
+          files: |
+            artifacts/**/*.tar.gz
+            artifacts/**/*.zip
+          draft: false
+          prerelease: ${{ !startsWith(github.ref, 'refs/tags/v') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
