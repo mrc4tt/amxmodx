@@ -1,17 +1,16 @@
 "Games"
 {
-	"*" // Linux CRC overrides for engine/server
+	"*"
 	{
 		"CRC"
 		{
 			"engine"
 			{
-				"linux" "876A45F5"
+				"linux" "0F93378E"
 			}
-
 			"server"
 			{
-				"linux" "D8ADA5A6"
+				"linux" "00000000"
 			}
 		}
 	}
