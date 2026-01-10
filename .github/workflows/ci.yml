@@ -63,7 +63,7 @@ jobs:
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
           echo "git_commit_count=${GIT_COMMIT_COUNT}" >> $GITHUB_OUTPUT
       # Setup Python for AMBuild
-      - uses: actions/setup-python@v2
+      - uses: actions/setup-python@v5
         name: Setup Python 3.9
         with:
           python-version: 3.9
@@ -183,7 +183,7 @@ jobs:
           fi
           echo "version=$VERSION" >> $GITHUB_OUTPUT
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || format('v{0}', steps.ver.outputs.version) }}
           name: ${{ startsWith(github.ref, 'refs/tags/v') && format('AMX Mod X {0}', steps.ver.outputs.version) || format('AMX Mod X Dev Build {0}', steps.ver.outputs.version) }}
