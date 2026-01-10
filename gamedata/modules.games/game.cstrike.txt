@@ -11,8 +11,16 @@
 
 "Games"
 {
-	"#default" // Build 10210
+	"#default" // Build 10210 + ReHLDS/ReGameDLL Forked
 	{
+		"CRC"
+		{
+			"server"
+			{
+				"linux"		"3BE49C6F"
+			}
+		}
+
 		"Signatures"
 		{
 			"CanPlayerBuy"  // bool CBasePlayer::CanPlayerBuy(bool display)
@@ -23,119 +31,176 @@
 				"mac"       "@_ZN11CBasePlayer12CanPlayerBuyEb"
 			}
 
-			"CanBuyThis"  // bool CanBuyThis(CBasePlayer *pPlayer, int weaponId)
-			{
-				"library"   "server"
-				"windows"   "\x55\x8B\xEC\x53\x8B\x1D\x2A\x2A\x2A\x2A\x56\x8B\x75"
-				"linux"     "@_Z10CanBuyThisP11CBasePlayeri"
-				"mac"       "@_Z10CanBuyThisP11CBasePlayeri"
-			}
-
-			"AddAccount"    // void CBasePlayer::AddAccount(int amount, bool bTrackChange)
-			{
-				"library"   "server"
-				"windows"   "\x55\x8B\xEC\x8B\x45\x2A\x56\x8B\xF1\x01\x86"
-				"linux"     "@_ZN11CBasePlayer10AddAccountEib"
-				"mac"       "@_ZN11CBasePlayer10AddAccountEib"
-			}
-
 			"GiveNamedItem" // void CBasePlayer::GiveNamedItem(const char *pszName)
 			{
 				"library"   "server"
-				"windows"   "\x55\x8B\xEC\xA1\x2A\x2A\x2A\x2A\x8B\x55\x2A\x56"
+				"windows"   "\x55\x8B\xEC\x56\x8B\x75\x08\x57\x8B\xF9\x85\xF6\x74\x2A\x56"
 				"linux"     "@_ZN11CBasePlayer13GiveNamedItemEPKc"
 				"mac"       "@_ZN11CBasePlayer13GiveNamedItemEPKc"
 			}
 
-			"GiveDefaultItems" // void CBasePlayer::GiveDefaultItems(void)
+			"GiveDefaultItems"  // void CBasePlayer::GiveDefaultItems()
 			{
 				"library"   "server"
-				"windows"   "\x56\x6A\x2A\x8B\xF1\xE8\x2A\x2A\x2A\x2A\x8B\x86"
+				"windows"   "\x55\x8B\xEC\x81\xEC\x2A\x2A\x2A\x2A\x56\x8B\xF1\x8A\x86"
 				"linux"     "@_ZN11CBasePlayer16GiveDefaultItemsEv"
 				"mac"       "@_ZN11CBasePlayer16GiveDefaultItemsEv"
 			}
 
-			"GiveShield"    // void CBasePlayer::GiveShield(bool bRetire)
+			"GiveShield" // void CBasePlayer::GiveShield(bool bRetire)
 			{
 				"library"   "server"
-				"windows"   "\x55\x8B\xEC\x56\x8B\xF1\x8B\x8E\x2A\x2A\x2A\x2A\xC6\x86"
+				"windows"   "\x56\x8B\xF1\x8B\x86\x2A\x2A\x2A\x2A\x57\x33\xFF\x3B\xC7"
 				"linux"     "@_ZN11CBasePlayer10GiveShieldEb"
 				"mac"       "@_ZN11CBasePlayer10GiveShieldEb"
 			}
 
-			"CreateNamedEntity" // edict_t* CREATE_NAMED_ENTITY(int classname)
+			"DropShield" // void CBasePlayer::DropShield(bool bDeploy)
 			{
 				"library"   "server"
-				"windows"   "\x55\x8B\xEC\x56\xFF\x75\x2A\xFF\x15"
-				"linux"     "@_Z19CREATE_NAMED_ENTITYj"
-				"mac"       "@_Z19CREATE_NAMED_ENTITYj"
+				"windows"   "\x56\x8B\xF1\x8B\x86\x2A\x2A\x2A\x2A\x85\xC0\x74\x2A\x83\xB8"
+				"linux"     "@_ZN11CBasePlayer10DropShieldEb"
+				"mac"       "@_ZN11CBasePlayer10DropShieldEb"
 			}
 
-			"FindEntityByString" // CBaseEntity *UTIL_FindEntityByString(CBaseEntity *pStartEntity, const char *szKeyword, const char *szValue)
+			"DropPlayerItem" // void CBasePlayer::DropPlayerItem(const char *pszItemName)
 			{
 				"library"   "server"
-				"windows"   "\x55\x8B\xEC\x51\x8B\x45\x2A\x53\x56"
-				"linux"     "@_Z23UTIL_FindEntityByStringP11CBaseEntityPKcS2_"
-				"mac"       "@_Z23UTIL_FindEntityByStringP11CBaseEntityPKcS2_"
+				"windows"   "\x55\x8B\xEC\x81\xEC\x2A\x2A\x2A\x2A\x53\x56\x8B\xF1\x8B\x4D\x08"
+				"linux"     "@_ZN11CBasePlayer14DropPlayerItemEPKc"
+				"mac"       "@_ZN11CBasePlayer14DropPlayerItemEPKc"
 			}
 
-			"AddEntityHashValue" // void AddEntityHashValue(struct entvars_s *pev, const char *value, hash_types_e fieldType)
+			"RemoveShield" // void CBasePlayer::RemoveShield()
 			{
 				"library"   "server"
-				"windows"   "\x55\x8B\xEC\x51\x83\x7D"
-				"linux"     "@_Z18AddEntityHashValueP9entvars_sPKc12hash_types_e"
-				"mac"       "@_Z18AddEntityHashValueP9entvars_sPKc12hash_types_e"
+				"windows"   "\x56\x8B\xF1\x8B\x86\x2A\x2A\x2A\x2A\x85\xC0\x74\x2A\x6A"
+				"linux"     "@_ZN11CBasePlayer12RemoveShieldEv"
+				"mac"       "@_ZN11CBasePlayer12RemoveShieldEv"
 			}
 
-			"RemoveEntityHashValue" // void RemoveEntityHashValue(struct entvars_s *pev, const char *value, hash_types_e fieldType)
+			"RemoveAllItems" // void CBasePlayer::RemoveAllItems(bool bRemoveSuit)
 			{
 				"library"   "server"
-				"windows"   "\x55\x8B\xEC\x8B\x4D\x2A\x33\xD2\x56\x57"
-				"linux"     "@_Z21RemoveEntityHashValueP9entvars_sPKc12hash_types_e"
-				"mac"       "@_Z21RemoveEntityHashValueP9entvars_sPKc12hash_types_e"
+				"windows"   "\x56\x8B\xF1\x8B\x86\x2A\x2A\x2A\x2A\x85\xC0\x74\x2A\x50"
+				"linux"     "@_ZN11CBasePlayer14RemoveAllItemsEb"
+				"mac"       "@_ZN11CBasePlayer14RemoveAllItemsEb"
 			}
 
-			"GetWeaponInfo" // WeaponInfoStruct *GetWeaponInfo(int id);
+			"SetBombIcon" // void CBasePlayer::SetBombIcon(bool bFlash)
 			{
 				"library"   "server"
-				"windows"   "\x55\x8B\xEC\xA1\x2A\x2A\x2A\x2A\x33\xC9\x85\x2A\x74" // Found following weaponInfo array
-				"linux"     "@_Z13GetWeaponInfoi"
-				"mac"       "@_Z13GetWeaponInfoi"
+				"windows"   "\x55\x8B\xEC\x51\x53\x56\x8B\xF1\x8B\x86\x2A\x2A\x2A\x2A"
+				"linux"     "@_ZN11CBasePlayer11SetBombIconEb"
+				"mac"       "@_ZN11CBasePlayer11SetBombIconEb"
 			}
 
-			"GetAmmoIndex" // int CBasePlayer::GetAmmoIndex(const char *psz)
+			"SetProgressBarTime" // void CBasePlayer::SetProgressBarTime(int time)
 			{
 				"library"   "server"
-				"windows"   "\x55\x8B\xEC\x53\x56\x57\x8B\x7D\x2A\x85\xFF\x74\x2A\x8B\x1D"
-				"linux"     "@_ZN11CBasePlayer12GetAmmoIndexEPKc"
-				"mac"       "@_ZN11CBasePlayer12GetAmmoIndexEPKc"
+				"windows"   "\x55\x8B\xEC\x56\x8B\xF1\x81\xC6\x2A\x2A\x2A\x2A\x8B\x45\x08"
+				"linux"     "@_ZN11CBasePlayer18SetProgressBarTimeEi"
+				"mac"       "@_ZN11CBasePlayer18SetProgressBarTimeEi"
 			}
 
-			"BuyGunAmmo" // bool BuyGunAmmo(CBasePlayer *player, CBasePlayerItem *weapon, bool bBlinkMoney)
+			"TeamChangeUpdate" // void CHalfLifeMultiplay::TeamChangeUpdate(CBasePlayer *player, int team)
 			{
 				"library"   "server"
-				"windows"   "\x55\x8B\xEC\x56\x57\x8B\x7D\x2A\x8B\xCF\x6A"
-				"linux"     "@_Z10BuyGunAmmoR11CBasePlayerR15CBasePlayerItemb"
-				"mac"       "@_Z10BuyGunAmmoR11CBasePlayerR15CBasePlayerItemb"
+				"windows"   "\x55\x8B\xEC\x83\xEC\x08\x53\x56\x8B\x75\x08\x57\x8B\x86"
+				"linux"     "@_ZN19CHalfLifeMultiplay16TeamChangeUpdateEP11CBasePlayeri"
+				"mac"       "@_ZN19CHalfLifeMultiplay16TeamChangeUpdateEP11CBasePlayeri"
 			}
 
-			"UseBotArgs"    // bool UseBotArgs
+			"TerminateRound" // void CHalfLifeMultiplay::TerminateRound(float tmDelay, int iWinStatus)
 			{
 				"library"   "server"
-				"linux"     "@UseBotArgs"
-				"mac"       "@UseBotArgs"
+				"windows"   "\x55\x8B\xEC\x83\xEC\x0C\x56\x8B\xF1\x8B\x0D\x2A\x2A\x2A\x2A\x57\x8B\x01"
+				"linux"     "@_ZN19CHalfLifeMultiplay13TerminateRoundEfi"
+				"mac"       "@_ZN19CHalfLifeMultiplay13TerminateRoundEfi"
 			}
 
-			"BotArgs"       // const char *BotArgs[4]
+			"CheckWinConditions" // void CHalfLifeMultiplay::CheckWinConditions()
 			{
 				"library"   "server"
-				"linux"     "@BotArgs"
-				"mac"       "@BotArgs"
+				"windows"   "\x55\x8B\xEC\x83\xEC\x14\x53\x56\x8B\xF1\x8B\x86\x2A\x2A\x2A\x2A"
+				"linux"     "@_ZN19CHalfLifeMultiplay18CheckWinConditionsEv"
+				"mac"       "@_ZN19CHalfLifeMultiplay18CheckWinConditionsEv"
+			}
+
+			"HandleMenu_ChooseTeam" // void HandleMenu_ChooseTeam(CBasePlayer *player, int slot)
+			{
+				"library"   "server"
+				"windows"   "\x55\x8B\xEC\x51\x56\x8B\x75\x08\x85\xF6\x57\x0F\x84"
+				"linux"     "@_Z22HandleMenu_ChooseTeamP11CBasePlayeri"
+				"mac"       "@_Z22HandleMenu_ChooseTeamP11CBasePlayeri"
 			}
 		}
 
 		"Offsets"
 		{
+			"GiveNamedItem" // void CBasePlayer::GiveNamedItem(const char *pszName)
+			{
+				"windows"   "362"
+				"linux"     "363"
+				"mac"       "363"
+			}
+
+			"GiveDefaultItems"  // void CBasePlayer::GiveDefaultItems()
+			{
+				"windows"   "371"
+				"linux"     "372"
+				"mac"       "372"
+			}
+
+			"GiveShield" // void CBasePlayer::GiveShield(bool bRetire)
+			{
+				"windows"   "368"
+				"linux"     "369"
+				"mac"       "369"
+			}
+
+			"DropShield" // void CBasePlayer::DropShield(bool bDeploy)
+			{
+				"windows"   "369"
+				"linux"     "370"
+				"mac"       "370"
+			}
+
+			"DropPlayerItem" // void CBasePlayer::DropPlayerItem(const char *pszItemName)
+			{
+				"windows"   "359"
+				"linux"     "360"
+				"mac"       "360"
+			}
+
+			"RemoveShield" // void CBasePlayer::RemoveShield()
+			{
+				"windows"   "367"
+				"linux"     "368"
+				"mac"       "368"
+			}
+
+			"RemoveAllItems" // void CBasePlayer::RemoveAllItems(bool bRemoveSuit)
+			{
+				"windows"   "360"
+				"linux"     "361"
+				"mac"       "361"
+			}
+
+			"SetBombIcon" // void CBasePlayer::SetBombIcon(bool bFlash)
+			{
+				"windows"   "350"
+				"linux"     "351"
+				"mac"       "351"
+			}
+
+			"SetProgressBarTime" // void CBasePlayer::SetProgressBarTime(int time)
+			{
+				"windows"   "349"
+				"linux"     "350"
+				"mac"       "350"
+			}
+
 			"UseBotArgs"    // bool UseBotArgs
 			{
 				"windows"   "21" // Used with pfnClientCommand base address
@@ -152,232 +217,55 @@
 	{
 		"ItemInfos"
 		{
-			"BuyAliases"
-			{
-				//
-				// Weapon
-				//
-
-				"p228"
-				{
-					"itemid"     "1"  // CSW/I_P228
-					"classid"    "2"  // CS_WEAPONCLASS_PISTOL
-					"altname"    "228compact"
-				}
-				"scout"
-				{
-					"itemid"     "3"  // CSW/I_SCOUT
-					"classid"    "8"  // CS_WEAPONCLASS_SNIPERRIFLE
-				}
-				"xm1014"
-				{
-					"itemid"     "5"  // CSW/I_XM1014
-					"classid"    "5"  // CS_WEAPONCLASS_SHOTGUN
-					"altname"    "autoshotgun"
-				}
-				"mac10"
-				{
-					"itemid"     "7"  // CSW/I_MAC10
-					"classid"    "4"  // CS_WEAPONCLASS_SUBMACHINEGUN
-				}
-				"aug"
-				{
-					"itemid"     "8"  // CSW/I_AUG
-					"classid"    "7"  // CS_WEAPONCLASS_RIFLE
-					"altname"    "bullpup"
-				}
-				"elites"
-				{
-					"itemid"     "10" // CSW/I_ELITE
-					"classid"    "2"  // CS_WEAPONCLASS_PISTOL
-				}
-				"fn57"
-				{
-					"itemid"     "11" // CSW/I_FIVESEVEN
-					"classid"    "2"  // CS_WEAPONCLASS_PISTOL
-					"altname"    "fiveseven"
-				}
-				"ump45"
-				{
-					"itemid"     "12" // CSW/I_UMP45
-					"classid"    "4"  // CS_WEAPONCLASS_SUBMACHINEGUN
-				}
-				"sg550"
-				{
-					"itemid"     "13" // CSW/I_SG550
-					"classid"    "8"  // CS_WEAPONCLASS_SNIPERRIFLE
-					"altname"    "krieg550"
-				}
-				"galil"
-				{
-					"itemid"     "14" // CSW/I_GALIL
-					"classid"    "7"  // CS_WEAPONCLASS_RIFLE
-					"altname"    "defender"
-				}
-				"famas"
-				{
-					"itemid"     "15" // CSW/I_FAMAS
-					"classid"    "7"  // CS_WEAPONCLASS_RIFLE
-					"altname"    "clarion"
-				}
-				"usp"
-				{
-					"itemid"     "16" // CSW/I_USP
-					"classid"    "2"  // CS_WEAPONCLASS_PISTOL
-					"altname"    "km45"
-				}
-				"glock"
-				{
-					"itemid"     "17" // CSW/I_GLOCK18
-					"classid"    "2"  // CS_WEAPONCLASS_PISTOL
-					"altname"    "9x19mm"
-				}
-				"awp"
-				{
-					"itemid"     "18" // CSW/I_AWP
-					"classid"    "8"  // CS_WEAPONCLASS_SNIPERRIFLE
-					"altname"    "magnum"
-				}
-				"mp5"
-				{
-					"itemid"     "19" // CSW/I_MP5NAVY
-					"classid"    "4"  // CS_WEAPONCLASS_SUBMACHINEGUN
-					"altname"    "smg"
-				}
-				"m249"
-				{
-					"itemid"     "20" // CSW/I_M249
-					"classid"    "6"  // CS_WEAPONCLASS_MACHINEGUN
-				}
-				"m3"
-				{
-					"itemid"     "21" // CSW/I_M3
-					"classid"    "5"  // CS_WEAPONCLASS_SHOTGUN
-					"altname"    "12gauge"
-				}
-				"m4a1"
-				{
-					"itemid"     "22" // CSW/I_M4A1
-					"classid"    "7"  // CS_WEAPONCLASS_RIFLE
-				}
-				"tmp"
-				{
-					"itemid"     "23" // CSW/I_TMP
-					"classid"    "4"  // CS_WEAPONCLASS_SUBMACHINEGUN
-					"altname"    "mp"
-				}
-				"g3sg1"
-				{
-					"itemid"     "24" // CSW/I_G3SG1
-					"classid"    "8"  // CS_WEAPONCLASS_SNIPERRIFLE
-					"altname"    "d3au1"
-				}
-				"deagle"
-				{
-					"itemid"     "26" // CSW/I_DEAGLE
-					"classid"    "2"  // CS_WEAPONCLASS_PISTOL
-					"altname"    "nighthawk"
-				}
-				"sg552"
-				{
-					"itemid"     "27" // CSW/I_SG552
-					"classid"    "7"  // CS_WEAPONCLASS_RIFLE
-					"altname"    "krieg552"
-				}
-				"ak47"
-				{
-					"itemid"     "28" // CSW/I_AK47
-					"classid"    "7"  // CS_WEAPONCLASS_RIFLE
-					"altname"    "cv47"
-				}
-				"p90"
-				{
-					"itemid"     "30" // CSW/I_P90
-					"classid"    "4"  // CS_WEAPONCLASS_SUBMACHINEGUN
-					"altname"    "c90"
-				}
-
-				//
-				// Equipment
-				//
-
-				"hegren"
-				{
-					"itemid"     "4"  // CSW/I_HEGRENADE
-					"classid"    "3"  // CS_WEAPONCLASS_GRENADE
-					"price"      "300"
-				}
-				"sgren"
-				{
-					"itemid"     "9"  // CSW/I_SMOKEGRENADE
-					"classid"    "3"  // CS_WEAPONCLASS_GRENADE
-					"price"      "300"
-				}
-				"flash"
-				{
-					"itemid"     "25" // CSW/I_FLASHBANG
-					"classid"    "3"  // CS_WEAPONCLASS_GRENADE
-					"price"      "200"
-				}
-				"vest"
-				{
-					"itemid"     "31"  // CSW/I_VEST
-					"classname"  "item_kevlar"
-					"price"      "650"
-				}
-				"vesthelm"
-				{
-					"itemid"     "32"  // CSW/I_VESTHELM
-					"classname"  "item_assaultsuit"
-					"price"      "1000"
-				}
-				"defuser"
-				{
-					"itemid"     "33"  // CSI_DEFUSER
-					"classname"  "item_thighpack"
-					"price"      "200"
-				}
-				"nvgs"
-				{
-					"itemid"     "34"  // CSI_NVGS
-					"price"      "1250"
-				}
-				"shield"
-				{
-					"itemid"     "35"  // CSI_SHIELD
-					"classid"    "2"   // CS_WEAPONCLASS_PISTOL
-					"classname"  "weapon_shield"
-				}
-
-				//
-				// Ammunition
-				//
-
-				"primammo"
-				{
-					"itemid"    "36"  // CSI_PRIAMMO
-					"altname"   "buyammo1"
-				}
-				"secammo"
-				{
-					"itemid"    "37"  // CSI_SECAMMO
-					"altname"   "buyammo2"
-				}
-			}
+			"AK-47"         "ak47"
+			"Arctic Warfare Magnum"     "awp"
+			"Benelli M3 Super90"        "m3"
+			"Benelli XM1014"    "xm1014"
+			"C4"    "c4"
+			"Colt M4A1 Carbine"     "m4a1"
+			"CV-47"         "cv47"
+			"Desert Eagle .50 AE"   "deagle"
+			"Dual Beretta 96G Elite"    "elite"
+			"ES C90"        "c90"
+			"FN Five-seveN" "fiveseven"
+			"FN P90"        "p90"
+			"Glock 18"      "glock"
+			"H&K G3/SG-1"   "g3sg1"
+			"H&K MP5-Navy"  "mp5navy"
+			"H&K UMP45"     "ump45"
+			"H&K USP .45 Tactical"  "usp"
+			"IDF Defender"  "defender"
+			"IMI Galil"     "galil"
+			"Ingram MAC-10" "mac10"
+			"Knife"         "knife"
+			"Krieg 550 Commando"    "krieg550"
+			"Krieg 552"     "krieg552"
+			"Leone 12 Gauge Super"  "m3"
+			"Leone YG1265 Auto Shotgun"     "xm1014"
+			"M249"  "m249"
+			"Magnum Sniper Rifle"   "awp"
+			"Maverick M4A1 Carbine"     "m4a1"
+			"Night Hawk .50C"   "deagle"
+			"Schmidt Machine Pistol"    "tmp"
+			"Schmidt Scout" "scout"
+			"SG-550 Sniper" "sg550"
+			"SG-552 Commando"   "sg552"
+			"Sig P228"      "p228"
+			"Sig SG-550 Sniper"     "sg550"
+			"Sig SG-552 Commando"   "sg552"
+			"Steyr Aug"     "aug"
+			"Steyr Scout"   "scout"
+			"Steyr Tactical Machine Pistol"    "tmp"
 		}
 	}
 
-	"*" // Build 8684 - Windows
+	"*" // Build 8684 - Windows  
 	{
 		"CRC"
 		{
 			"server"
 			{
-				"engine"
-				{
-					"linux" "CE91C5D1"
-				}				"linux" "3BE49C6F" // cstrike/dlls/cs.so
-
+				"linux" "3BE49C6F" // cstrike/dlls/cs.so
 				"windows" "6BF63A24" // cstrike/dlls/mp.dll
 				"windows" "BD938A62" // czero/dlls/mp.dll
 			}
@@ -385,84 +273,170 @@
 
 		"Signatures"
 		{
-			"CanPlayerBuy"
+			"CanPlayerBuy"  // bool CBasePlayer::CanPlayerBuy(bool display)
 			{
-				"windows"   "\x51\x53\x55\x56\x57\x8B\x2A\x8B\x2A\x2A\x2A\x2A\x2A\x8B\x2A\xFF"
+				"library"   "server"
+				"windows"   "\x55\x8B\xEC\x51\x56\x8B\xF1\x8B\x0D\x2A\x2A\x2A\x2A\x8B\x01"
+				"linux"     "\x55\x89\xE5\x53\x83\xEC\x24\x8B\x5D\x08\x8B\x15\x2A\x2A\x2A\x2A"
 			}
 
-			"CanBuyThis"
+			"GiveNamedItem" // void CBasePlayer::GiveNamedItem(const char *pszName)
 			{
-				"windows"   "\x53\x8B\x2A\x2A\x2A\x2A\x2A\x56\x8B\x2A\x2A\x2A\x57\x8B"
+				"library"   "server"
+				"windows"   "\x55\x8B\xEC\x56\x8B\x75\x08\x57\x8B\xF9\x85\xF6\x74\x2A\x56"
+				"linux"     "\x55\x89\xE5\x57\x56\x53\x81\xEC\x2A\x2A\x2A\x2A\x8B\x5D\x08"
 			}
 
-			"AddAccount"
+			"GiveDefaultItems"  // void CBasePlayer::GiveDefaultItems()
 			{
-				"windows"   "\x8B\x2A\x2A\x2A\x56\x8B\x2A\x8B\x2A\x2A\x2A\x2A\x2A\x03"
+				"library"   "server"
+				"windows"   "\x55\x8B\xEC\x81\xEC\x2A\x2A\x2A\x2A\x56\x8B\xF1\x8A\x86"
+				"linux"     "\x55\x89\xE5\x57\x56\x53\x81\xEC\x2A\x2A\x2A\x2A\x8B\x75"
 			}
 
-			"GiveNamedItem"
+			"GiveShield" // void CBasePlayer::GiveShield(bool bRetire)
 			{
-				"windows"   "\x8B\x2A\x2A\x2A\x56\x57\x8B\x2A\x8B\x2A\x2A\x2A\x2A\x2A\x2B"
+				"library"   "server"
+				"windows"   "\x56\x8B\xF1\x8B\x86\x2A\x2A\x2A\x2A\x57\x33\xFF\x3B\xC7"
+				"linux"     "\x55\x89\xE5\x53\x83\xEC\x24\x8B\x5D\x08\x8B\x83\x2A\x2A\x2A\x2A"
 			}
 
-			"GiveDefaultItems"
+			"DropShield" // void CBasePlayer::DropShield(bool bDeploy)
 			{
-				"windows"   "\x56\x57\x6A\x2A\x8B\x2A\xE8\x2A\x2A\x2A\x2A\x8B\x2A\x2A\x2A\x2A\x2A\xC6"
+				"library"   "server"
+				"windows"   "\x56\x8B\xF1\x8B\x86\x2A\x2A\x2A\x2A\x85\xC0\x74\x2A\x83\xB8"
+				"linux"     "\x55\x89\xE5\x53\x83\xEC\x14\x8B\x5D\x08\x8B\x83\x2A\x2A\x2A\x2A"
 			}
 
-			"GiveShield"
+			"DropPlayerItem" // void CBasePlayer::DropPlayerItem(const char *pszItemName)
 			{
-				"windows"   "\x56\x8B\x2A\x57\x33\x2A\x8B\x2A\x2A\x2A\x2A\x2A\xB0"
+				"library"   "server"
+				"windows"   "\x55\x8B\xEC\x81\xEC\x2A\x2A\x2A\x2A\x53\x56\x8B\xF1\x8B\x4D\x08"
+				"linux"     "\x55\x89\xE5\x57\x56\x53\x81\xEC\x2A\x2A\x2A\x2A\x8B\x5D"
 			}
 
-			"CreateNamedEntity"
+			"RemoveShield" // void CBasePlayer::RemoveShield()
 			{
-				"windows"   "\x56\x57\x8B\x2A\x2A\x2A\x57\xFF\x2A\x2A\x2A\x2A\x2A\x8B"
+				"library"   "server"
+				"windows"   "\x56\x8B\xF1\x8B\x86\x2A\x2A\x2A\x2A\x85\xC0\x74\x2A\x6A"
+				"linux"     "\x55\x89\xE5\x53\x83\xEC\x14\x8B\x5D\x08\x8B\x83\x2A\x2A\x2A\x2A"
 			}
 
-			"FindEntityByString"
+			"RemoveAllItems" // void CBasePlayer::RemoveAllItems(bool bRemoveSuit)
 			{
-				"windows"   "\x51\x8B\x2A\x2A\x2A\x53\x55\x56\x85\x2A\x57"
+				"library"   "server"
+				"windows"   "\x56\x8B\xF1\x8B\x86\x2A\x2A\x2A\x2A\x85\xC0\x74\x2A\x50"
+				"linux"     "\x55\x89\xE5\x53\x83\xEC\x14\x8B\x5D\x08\x8B\x83\x2A\x2A\x2A\x2A"
 			}
 
-			"AddEntityHashValue"
+			"SetBombIcon" // void CBasePlayer::SetBombIcon(bool bFlash)
 			{
-				"windows"   "\x8B\x2A\x2A\x2A\x83\x2A\x2A\x85\x2A\x53\x55\x56\x57\x0F"
+				"library"   "server"
+				"windows"   "\x55\x8B\xEC\x51\x53\x56\x8B\xF1\x8B\x86\x2A\x2A\x2A\x2A"
+				"linux"     "\x55\x89\xE5\x53\x83\xEC\x14\x8B\x5D\x08\x8B\x83\x2A\x2A\x2A\x2A"
 			}
 
-			"RemoveEntityHashValue"
+			"SetProgressBarTime" // void CBasePlayer::SetProgressBarTime(int time)
 			{
-				"windows"   "\x8B\x2A\x2A\x2A\x53\x8B\x2A\x55\x8A\x2A\x33"
+				"library"   "server"
+				"windows"   "\x55\x8B\xEC\x56\x8B\xF1\x81\xC6\x2A\x2A\x2A\x2A\x8B\x45\x08"
+				"linux"     "\x55\x89\xE5\x83\xEC\x18\x8B\x45\x08\x8D\x95\x2A\x2A\x2A\x2A"
 			}
 
-			"GetWeaponInfo"
+			"TeamChangeUpdate" // void CHalfLifeMultiplay::TeamChangeUpdate(CBasePlayer *player, int team)
 			{
-				"windows"   "\x8B\x2A\x2A\x2A\x2A\x2A\x33\x2A\x85\x2A\x56\x74\x2A\x8B"
+				"library"   "server"
+				"windows"   "\x55\x8B\xEC\x83\xEC\x08\x53\x56\x8B\x75\x08\x57\x8B\x86"
+				"linux"     "\x55\x89\xE5\x57\x56\x53\x83\xEC\x2C\x8B\x75\x0C\x8B\x86"
 			}
 
-			"GetAmmoIndex"
+			"TerminateRound" // void CHalfLifeMultiplay::TerminateRound(float tmDelay, int iWinStatus)
 			{
-				"windows"   "\x56\x57\x8B\x2A\x2A\x2A\x85\x2A\x74\x2A\xBE"
+				"library"   "server"
+				"windows"   "\x55\x8B\xEC\x83\xEC\x0C\x56\x8B\xF1\x8B\x0D\x2A\x2A\x2A\x2A\x57\x8B\x01"
+				"linux"     "\x55\x89\xE5\x57\x56\x53\x83\xEC\x4C\xA1\x2A\x2A\x2A\x2A"
 			}
 
-			"BuyGunAmmo"
+			"CheckWinConditions" // void CHalfLifeMultiplay::CheckWinConditions()
 			{
-				"windows"   "\x56\x57\x8B\x2A\x2A\x2A\x6A\x2A\x8B\x2A\xE8\x2A\x2A\x2A\x2A\x84\x2A\x0F"
+				"library"   "server"
+				"windows"   "\x55\x8B\xEC\x83\xEC\x14\x53\x56\x8B\xF1\x8B\x86\x2A\x2A\x2A\x2A"
+				"linux"     "\x55\x89\xE5\x57\x56\x53\x83\xEC\x3C\x8B\x5D\x08\x8B\x83"
+			}
+
+			"HandleMenu_ChooseTeam" // void HandleMenu_ChooseTeam(CBasePlayer *player, int slot)
+			{
+				"library"   "server"
+				"windows"   "\x55\x8B\xEC\x51\x56\x8B\x75\x08\x85\xF6\x57\x0F\x84"
+				"linux"     "\x55\x89\xE5\x57\x56\x53\x83\xEC\x2C\x8B\x5D\x08\x85\xDB"
 			}
 		}
 
 		"Offsets"
 		{
-			"UseBotArgs"
+			"GiveNamedItem" // void CBasePlayer::GiveNamedItem(const char *pszName)
 			{
-				"windows"   "2" // Used with pfnClientCommand base address
+				"windows"   "316"
+				"linux"     "317"
 			}
 
-			"BotArgs"
+			"GiveDefaultItems"  // void CBasePlayer::GiveDefaultItems()
 			{
-				"windows"   "22"
+				"windows"   "325"
+				"linux"     "326"
+			}
+
+			"GiveShield" // void CBasePlayer::GiveShield(bool bRetire)
+			{
+				"windows"   "322"
+				"linux"     "323"
+			}
+
+			"DropShield" // void CBasePlayer::DropShield(bool bDeploy)
+			{
+				"windows"   "323"
+				"linux"     "324"
+			}
+
+			"DropPlayerItem" // void CBasePlayer::DropPlayerItem(const char *pszItemName)
+			{
+				"windows"   "313"
+				"linux"     "314"
+			}
+
+			"RemoveShield" // void CBasePlayer::RemoveShield()
+			{
+				"windows"   "321"
+				"linux"     "322"
+			}
+
+			"RemoveAllItems" // void CBasePlayer::RemoveAllItems(bool bRemoveSuit)
+			{
+				"windows"   "314"
+				"linux"     "315"
+			}
+
+			"SetBombIcon" // void CBasePlayer::SetBombIcon(bool bFlash)
+			{
+				"windows"   "304"
+				"linux"     "305"
+			}
+
+			"SetProgressBarTime" // void CBasePlayer::SetProgressBarTime(int time)
+			{
+				"windows"   "303"
+				"linux"     "304"
+			}
+
+			"UseBotArgs"    // bool UseBotArgs
+			{
+				"windows"   "21" // Used with pfnClientCommand base address
+			}
+
+			"BotArgs"       // const char *BotArgs[4]
+			{
+				"windows"   "42"
 			}
 		}
 	}
 }
-
