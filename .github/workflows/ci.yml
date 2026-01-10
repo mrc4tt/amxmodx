@@ -19,14 +19,6 @@ jobs:
     strategy:
       matrix:
         include:
-          # - os: ubuntu-latest
-          #   os_short: linux
-          #   compiler_cc: gcc
-          #   compiler_cxx: g++
-          # - os: ubuntu-latest
-          #   os_short: linux
-          #   compiler_cc: clang
-          #   compiler_cxx: clang++
           - os: ubuntu-22.04
             os_short: linux
             compiler_cc: clang-11
@@ -52,6 +44,7 @@ jobs:
           submodules: recursive
           path: amxmodx
           fetch-depth: 0
+      
       - name: Compute version
         id: version
         working-directory: amxmodx
@@ -62,15 +55,18 @@ jobs:
           VERSION="${PRODUCT_VERSION}.${GIT_COMMIT_COUNT}"
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
           echo "git_commit_count=${GIT_COMMIT_COUNT}" >> $GITHUB_OUTPUT
+      
       # Setup Python for AMBuild
       - uses: actions/setup-python@v5
         name: Setup Python 3.9
         with:
           python-version: 3.9
+      
       - name: Install Python dependencies
         run: |
           python3 -m pip install --upgrade pip setuptools wheel
           python3 --version
+      
       - name: Install AMXModX dependencies (Linux)
         if: startsWith(runner.os, 'Linux')
         shell: bash
@@ -81,6 +77,7 @@ jobs:
           # Satisfy checkout-deps requirement for a "amxmodx" folder.
           mkdir -p amxmodx
           ../amxmodx/support/checkout-deps.sh          
+      
       - name: Install AMXModX dependencies (Windows)
         if: startsWith(runner.os, 'Windows')
         shell: cmd
@@ -104,6 +101,7 @@ jobs:
           
           cd ..\ambuild
           python3 setup.py install          
+      
       - name: Install Linux dependencies
         if: startsWith(runner.os, 'Linux')
         run: |
@@ -113,6 +111,7 @@ jobs:
             gcc-multilib g++-multilib libstdc++6 lib32stdc++6 \
             libc6-dev libc6-dev-i386 linux-libc-dev \
             linux-libc-dev:i386 lib32z1-dev nasm ${{ matrix.compiler_cc }} ${{ matrix.compiler_install }}
+      
       - name: Select compiler
         if: startsWith(runner.os, 'Linux')
         run: |
@@ -120,7 +119,9 @@ jobs:
           echo "CXX=${{ matrix.compiler_cxx }}" >> $GITHUB_ENV
           ${{ matrix.compiler_cc }} --version
           ${{ matrix.compiler_cxx }} --version
+      
       - uses: ilammy/setup-nasm@v1
+      
       - name: Build Linux
         if: startsWith(runner.os, 'Linux')
         working-directory: amxmodx
@@ -130,16 +131,31 @@ jobs:
           cd build
           python3 ../configure.py --enable-optimize --metamod=${{ env.DEPENDENCIES_ROOT }}/metamod-am --hlsdk=${{ env.DEPENDENCIES_ROOT }}/hlsdk --mysql=${{ env.DEPENDENCIES_ROOT }}/mysql-5.5
           ambuild
+      
+      - name: List built packages (Linux)
+        if: startsWith(runner.os, 'Linux')
+        working-directory: amxmodx/build
+        run: |
+          echo "=== Built packages ==="
+          find . -type f \( -name "*.tar.gz" -o -name "*.zip" \) | sort
+          echo ""
+          echo "=== Package directory structure ==="
+          ls -lhR packages/ 2>/dev/null || ls -lhR package/ 2>/dev/null || echo "No packages/ or package/ directory found"
+      
       - name: Upload Linux artifacts
         if: startsWith(runner.os, 'Linux') && always()
         uses: actions/upload-artifact@v4
         with:
           name: amxmodx-${{ matrix.os_short }}-${{ matrix.compiler_cc }}-${{ github.sha }}
-          path: amxmodx/build/packages/
+          path: |
+            amxmodx/build/packages/
+            amxmodx/build/package/
           retention-days: 7
+      
       - uses: ilammy/msvc-dev-cmd@v1
         with:
           arch: x86
+      
       - name: Build Windows
         if: startsWith(runner.os, 'Windows')
         working-directory: amxmodx
@@ -150,12 +166,26 @@ jobs:
           cd build
           python3 ../configure.py --enable-optimize --metamod=${{ env.DEPENDENCIES_ROOT_WIN }}\metamod-am --hlsdk=${{ env.DEPENDENCIES_ROOT_WIN }}\hlsdk --mysql=${{ env.DEPENDENCIES_ROOT_WIN }}\mysql-5.5
           ambuild
+      
+      - name: List built packages (Windows)
+        if: startsWith(runner.os, 'Windows')
+        working-directory: amxmodx/build
+        shell: cmd
+        run: |
+          echo === Built packages ===
+          dir /s /b *.zip *.tar.gz 2>nul
+          echo.
+          echo === Package directory ===
+          dir packages\ 2>nul || dir package\ 2>nul || echo No packages directory found
+      
       - name: Upload Windows artifacts
         if: startsWith(runner.os, 'Windows') && always()
         uses: actions/upload-artifact@v4
         with:
           name: amxmodx-${{ matrix.os_short }}-${{ matrix.compiler_cc }}-${{ github.sha }}
-          path: amxmodx/build/packages/
+          path: |
+            amxmodx/build/packages/
+            amxmodx/build/package/
           retention-days: 7
 
   create-release:
@@ -170,6 +200,18 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: artifacts
+      
+      - name: List all downloaded artifacts
+        run: |
+          echo "=== Downloaded artifacts structure ==="
+          find artifacts -type f | sort
+          echo ""
+          echo "=== Package files count ==="
+          find artifacts -type f \( -name "*.tar.gz" -o -name "*.zip" \) | wc -l
+          echo ""
+          echo "=== Package files list ==="
+          find artifacts -type f \( -name "*.tar.gz" -o -name "*.zip" \) | sort
+      
       - name: Determine version
         id: ver
         run: |
@@ -182,6 +224,7 @@ jobs:
             VERSION=$(cat version.txt)
           fi
           echo "version=$VERSION" >> $GITHUB_OUTPUT
+      
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
