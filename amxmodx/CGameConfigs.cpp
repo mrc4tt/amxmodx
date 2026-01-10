@@ -444,7 +444,7 @@ SMCResult CGameConfig::ReadSMC_KeyValue(const SMCStates *states, const char *key
 		}
 		case PSTATE_GAMEDEFS_CRC_BINARY:
 		{
-			if (g_LibSys.DoesPlatformMatch(key) && m_CurrentBinCRCValid && !m_ShouldBeReadingDefault)
+                        if (g_LibSys.DoesPlatformMatch(key) && m_CurrentBinCRCValid)
 			{
 				unsigned int crc = 0;
 				sscanf(value, "%08X", &crc);
@@ -454,7 +454,6 @@ SMCResult CGameConfig::ReadSMC_KeyValue(const SMCStates *states, const char *key
 
 				if (m_CurrentBinCRC == crc)
 				{
-					m_ShouldBeReadingDefault = true;
 					m_CurrentCRCMatched = true;
 					AMXXLOG_Log("GameConfig CRC match for game \"%s\" section \"%s\" library \"%s\" platform \"%s\" (%s)",
 								m_Game, m_CurrentCRCSection, libraryName, key, currentHex);
@@ -598,7 +597,7 @@ SMCResult CGameConfig::ReadSMC_LeavingSection(const SMCStates *states)
 		}
 		case PSTATE_GAMEDEFS_CRC_BINARY:
 		{
-			if (!m_CurrentCRCMatched && m_CurrentBinCRCValid)
+                        if (!m_CurrentCRCMatched && m_CurrentBinCRCValid && m_LastCRCExpected != 0)
 			{
 				const char *libraryName = m_CurrentCRCLibrary[0] ? m_CurrentCRCLibrary : "<unknown>";
 				const char *platform = m_LastCRCPlatform[0] ? m_LastCRCPlatform : "<unknown>";
@@ -618,6 +617,10 @@ SMCResult CGameConfig::ReadSMC_LeavingSection(const SMCStates *states)
 							m_Game, m_CurrentCRCSection, libraryName, platform, expectedHex, actualHex);
 			}
 
+                        // Reset state for next library in the same CRC block
+                        m_CurrentCRCMatched = false;
+                        m_LastCRCExpected = 0;
+                        m_LastCRCPlatform[0] = '\0';
 			m_ParseState = PSTATE_GAMEDEFS_CRC;
 			break;
 		}
