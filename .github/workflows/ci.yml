@@ -52,6 +52,7 @@ jobs:
       - name: Compute version
         id: version
         working-directory: amxmodx
+        shell: bash
         run: |
           PRODUCT_VERSION=$(cat product.version)
           GIT_COMMIT_COUNT=$(git rev-list --count HEAD)
