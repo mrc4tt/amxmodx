@@ -15,7 +15,11 @@
 	{
 		"CRC"
 		{
-			"server"
+						"engine"
+			{
+				"linux" "F1D06F96" // engine_i486.so
+			}
+"server"
 			{
 				"linux"		"3BE49C6F"
 			}
