@@ -16,6 +16,10 @@
 		"CRC"
 		{
 						"engine"
+						{
+							"linux" "73735670" // engine_i486.so
+						}
+						"engine"
 			{
 				"linux" "F1D06F96" // engine_i486.so
 			}
