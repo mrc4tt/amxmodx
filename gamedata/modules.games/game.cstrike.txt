@@ -17,6 +17,10 @@
 		{
 						"engine"
 						{
+							"linux" "82AFB44A" // engine_i486.so
+						}
+						"engine"
+						{
 							"linux" "73735670" // engine_i486.so
 						}
 						"engine"
