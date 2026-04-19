@@ -28,7 +28,8 @@
 				"linux" "F1D06F96" // engine_i486.so
 			}
 "server"
-			{
+			{				"linux" "7200213D" // cstrike/dlls/cs.so
+
 				"linux"		"3BE49C6F"
 			}
 		}
