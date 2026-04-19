@@ -8,12 +8,35 @@
 //     https://alliedmods.net/amxmodx-license
 
 //
-// Restrict Weapons Plugin
+// Restrict Weapons Plugin (Miksenhost merged variant)
+//
+// Keeps the original menu UI, weaprest.ini load/save, admin commands, and
+// pb_restrweapons/pb_restrequipammo syncing.
+//
+// Item restriction strategy:
+//   * Primary hook: RG_CBasePlayer_HasRestrictItem — clean reject, requires
+//     REGAMEDLL_ADD in the ReGameDLL build. When active it handles everything.
+//   * Fallback hooks for SHIELD and NVG (fire regardless of REGAMEDLL_ADD):
+//        - RG_CBasePlayer_GiveShield: blocks the shield item.
+//        - RG_CBasePlayer_AddAccount: blocks the -$1250 / -$2200 deduction
+//          and clears m_bHasNightVision for the NVG case.
+//     These are only needed if your ReGameDLL build doesn't honor the
+//     HasRestrictItem return; on a full-ADD build they are redundant but
+//     harmless (HasRestrictItem rejects the buy before either fires).
+//
+// CS_OnBuyAttempt is intentionally NOT used here — having that forward
+// registered caused PODBOTmm bots to get stuck in spectator, even when the
+// handler early-returned for bots.
+//
+// Ammo restriction note: neither HasRestrictItem nor the fallback hooks cover
+// primary/secondary ammo, so CSI_PRIAMMO / CSI_SECAMMO menu entries are
+// accepted but not enforced.
 //
 
 #include <amxmodx>
 #include <amxmisc>
 #include <cstrike>
+#include <reapi>
 
 new const PluginName[] = "Restrict Weapons";
 
@@ -24,6 +47,10 @@ const MaxCommandAliasLength = 12;
 const MaxConfigFileLength   = 48;
 const MaxConsoleLength      = 128;
 const MaxMapLength          = 32;
+
+// Buy prices used by the AddAccount fallback hook (NVG / shield).
+const NvgsPrice   = 1250;
+const ShieldPrice = 2200;
 
 new bool:BlockedItems[CSI_MAX_COUNT];
 new bool:ModifiedItem;
@@ -92,6 +119,16 @@ public plugin_init()
 	register_clcmd( "amx_restmenu", "@ClientCommand_MainMenu" , ADMIN_CFG, .info = "REG_CMD_MENU", .info_ml = true);
 	register_concmd("amx_restrict", "@ConsoleCommand_Restrict", ADMIN_CFG, .info = "REG_CMD_REST", .info_ml = true);
 
+	// Primary hook for item restrictions. Works on REGAMEDLL_ADD builds.
+	RegisterHookChain(RG_CBasePlayer_HasRestrictItem, "@OnHasRestrictItem", .post = false);
+
+	// Fallback hooks for SHIELD and NVG, needed when ReGameDLL was built
+	// without REGAMEDLL_ADD (HasRestrictItem return is ignored there).
+	// These fire unconditionally and don't go through CS_OnBuyAttempt, so
+	// they don't interfere with PODBOTmm bot team-join logic.
+	RegisterHookChain(RG_CBasePlayer_GiveShield, "@OnGiveShield", .post = false);
+	RegisterHookChain(RG_CBasePlayer_AddAccount, "@OnAddAccount", .post = false);
+
 	CvarPointerAllowMapSettings     = register_cvar("amx_restrmapsettings", "0");
 	CvarPointerRestrictedWeapons    = register_cvar("amx_restrweapons"    , RestrictedBotWeapons);
 	CvarPointerRestrictedEquipAmmos = register_cvar("amx_restrequipammo"  , RestrictedBotEquipAmmos);
@@ -120,16 +157,6 @@ public OnConfigsExecuted()
 	loadSettings(ConfigFilePath);
 
 	ConfigsExecuted = true;
-}
-
-public CS_OnBuyAttempt(player, itemid)
-{
-	if (BlockedItems[itemid])
-	{
-		return blockcommand(player);
-	}
-
-	return PLUGIN_CONTINUE;
 }
 
 public blockcommand(const id) // Might be used by others plugins, so keep this for backward compatibility.
@@ -568,8 +595,24 @@ bool:saveSettings(const filename[])
 					fprintf(fp, "^n; %l^n; -^n", MenuInfos[class][m_Title]);
 				}
 
-				cs_get_item_alias(itemid, alias, charsmax(alias));
-				fprintf(fp, "%-16.15s ; %L^n", alias, LANG_SERVER, ItemsInfos[class][slot][m_Name]);
+				// cs_get_item_alias does not reliably cover plugin-internal
+				// CSI values (CSI_SHIELD, CSI_NVGS, CSI_PRIAMMO, CSI_SECAMMO),
+				// so we force a stable alias for those ourselves — otherwise
+				// the saved line ends up blank or referring to the wrong id.
+				alias[0] = EOS;
+				switch (itemid)
+				{
+					case CSI_SHIELD:  copy(alias, charsmax(alias), "shield");
+					case CSI_NVGS:    copy(alias, charsmax(alias), "nvgs");
+					case CSI_PRIAMMO: copy(alias, charsmax(alias), "primammo");
+					case CSI_SECAMMO: copy(alias, charsmax(alias), "secammo");
+					default:          cs_get_item_alias(itemid, alias, charsmax(alias));
+				}
+
+				if (alias[0])
+				{
+					fprintf(fp, "%-16.15s ; %L^n", alias, LANG_SERVER, ItemsInfos[class][slot][m_Name]);
+				}
 			}
 		}
 	}
@@ -608,10 +651,44 @@ bool:loadSettings(const filename[])
 			continue;
 		}
 
-		if (parse(lineRead, alias, charsmax(alias)) == 1 && (itemid = cs_get_item_id(alias)) != CSI_NONE)
+		if (parse(lineRead, alias, charsmax(alias)) == 1)
 		{
-			BlockedItems[itemid] = true;
-			restrictPodbotItem(itemid);
+			// Resolve plugin-internal CSI ids ourselves. cs_get_item_id("shield")
+			// returns the real-game CSI_SHIELDGUN (99) which is out-of-range for
+			// BlockedItems[CSI_MAX_COUNT], and "nvgs"/"primammo"/"secammo" may
+			// not be recognised at all depending on module version.
+			if (equal(alias, "shield"))
+			{
+				itemid = CSI_SHIELD;
+			}
+			else if (equal(alias, "nvgs") || equal(alias, "nightvision"))
+			{
+				itemid = CSI_NVGS;
+			}
+			else if (equal(alias, "primammo"))
+			{
+				itemid = CSI_PRIAMMO;
+			}
+			else if (equal(alias, "secammo"))
+			{
+				itemid = CSI_SECAMMO;
+			}
+			else
+			{
+				itemid = cs_get_item_id(alias);
+
+				// Remap real-game shield id to the plugin-facing one.
+				if (itemid == CSI_SHIELDGUN)
+				{
+					itemid = CSI_SHIELD;
+				}
+			}
+
+			if (itemid > CSI_NONE && itemid < CSI_MAX_COUNT)
+			{
+				BlockedItems[itemid] = true;
+				restrictPodbotItem(itemid);
+			}
 		}
 	}
 
@@ -679,3 +756,112 @@ updatePodbotCvars()
 	set_pcvar_string(CvarPointerRestrictedEquipAmmos, RestrictedBotEquipAmmos);
 }
 
+// =============================================================================
+// HasRestrictItem hook (merged Miksenhost variant)
+// =============================================================================
+//
+// Fires once per buy attempt with the ItemID the player is trying to buy.
+// Returning 1 via SetHookChainReturn instructs ReGameDLL to reject the item
+// through its own code path — this is the same route the stock mp_restrictweapons
+// cvar uses, so bots (PODBOTmm included) already know how to react to it.
+//
+@OnHasRestrictItem(const id, const ItemID:item, const ItemRestType:type)
+{
+	// Bots manage their own weapon choices via pb_restrweapons; don't interfere.
+	if (is_user_bot(id))
+	{
+		return HC_CONTINUE;
+	}
+
+	new csi = itemIdToCsi(item);
+
+	if (csi == CSI_NONE || !BlockedItems[csi])
+	{
+		return HC_CONTINUE;
+	}
+
+	if (type == ITEM_TYPE_BUYING)
+	{
+		client_print(id, print_center, "%l", "RESTRICTED_ITEM");
+	}
+
+	SetHookChainReturn(ATYPE_BOOL, true);
+	return HC_SUPERCEDE;
+}
+
+// Translate a reapi ItemID into the CSI_* value used by BlockedItems[].
+// Weapon IDs 1..30 line up 1:1 between the two enums; only the custom
+// equipment IDs need a manual mapping.
+stock itemIdToCsi(const ItemID:item)
+{
+	switch (item)
+	{
+		case ITEM_SHIELDGUN: return CSI_SHIELD;
+		case ITEM_NVG:       return CSI_NVGS;
+		case ITEM_DEFUSEKIT: return CSI_DEFUSER;
+		case ITEM_KEVLAR:    return CSI_VEST;
+		case ITEM_ASSAULT:   return CSI_VESTHELM;
+	}
+
+	new val = _:item;
+	if (1 <= val <= 30)
+	{
+		return val;
+	}
+
+	return CSI_NONE;
+}
+
+// =============================================================================
+// SHIELD / NVG fallback hooks (for non-REGAMEDLL_ADD builds)
+// =============================================================================
+// These fire regardless of REGAMEDLL_ADD, unlike HasRestrictItem. On a full
+// ADD build they're redundant (HasRestrictItem already rejected the buy), but
+// harmless. Bots are skipped so PODBOTmm's buy routine isn't interrupted.
+//
+@OnGiveShield(const id, bool:bDeploy)
+{
+	if (is_user_bot(id))
+	{
+		return HC_CONTINUE;
+	}
+
+	if (BlockedItems[CSI_SHIELD] && is_user_alive(id))
+	{
+		client_print(id, print_center, "%l", "RESTRICTED_ITEM");
+		return HC_SUPERCEDE;
+	}
+
+	return HC_CONTINUE;
+}
+
+@OnAddAccount(const id, amount, RewardType:type, bool:bTrackChange)
+{
+	if (type != RT_PLAYER_BOUGHT_SOMETHING || !is_user_alive(id))
+	{
+		return HC_CONTINUE;
+	}
+
+	if (is_user_bot(id))
+	{
+		return HC_CONTINUE;
+	}
+
+	// NVG buy: buy code has already set m_bHasNightVision = true at this
+	// point, so clear it then block the deduction.
+	if (amount == -NvgsPrice && BlockedItems[CSI_NVGS] && get_member(id, m_bHasNightVision))
+	{
+		set_member(id, m_bHasNightVision, false);
+		client_print(id, print_center, "%l", "RESTRICTED_ITEM");
+		return HC_SUPERCEDE;
+	}
+
+	// Shield buy: GiveShield above already blocked the item; here we just
+	// prevent the money from being taken.
+	if (amount == -ShieldPrice && BlockedItems[CSI_SHIELD])
+	{
+		return HC_SUPERCEDE;
+	}
+
+	return HC_CONTINUE;
+}
