@@ -17,11 +17,12 @@
 		{
 			"engine"
 			{
-				"linux" "C9957769" // engine_i486.so
+				"linux" 	"3387070A" // engine_i486.so
 			}
-"server"
-			{				"linux" "7200213D" // cstrike/dlls/cs.so
 
+			"server"
+			{				
+				"linux" 	"7200213D" // cstrike/dlls/cs.so
 				"linux"		"3BE49C6F"
 			}
 		}
