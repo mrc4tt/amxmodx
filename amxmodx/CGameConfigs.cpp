@@ -10,7 +10,6 @@
 #include "CGameConfigs.h"
 #include <amxmodx.h>
 #include <MemoryUtils.h>
-#include "sm_crc32.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -35,8 +34,6 @@ enum
 	PSTATE_GAMEDEFS_SUPPORTED,
 	PSTATE_GAMEDEFS_SIGNATURES,
 	PSTATE_GAMEDEFS_SIGNATURES_SIG,
-	PSTATE_GAMEDEFS_CRC,
-	PSTATE_GAMEDEFS_CRC_BINARY,
 	PSTATE_GAMEDEFS_CUSTOM,
 	PSTATE_GAMEDEFS_ADDRESSES,
 	PSTATE_GAMEDEFS_ADDRESSES_ADDRESS,
@@ -109,7 +106,6 @@ SMCResult CGameConfig::ReadSMC_NewSection(const SMCStates *states, const char *n
 			{
 				m_ShouldBeReadingDefault = true;
 				strncopy(m_Game, name, sizeof(m_Game));
-				strncopy(m_CurrentCRCSection, name, sizeof(m_CurrentCRCSection));
 
 				m_Class[0] = '\0';
 				m_MatchedClasses = false;
@@ -159,17 +155,6 @@ SMCResult CGameConfig::ReadSMC_NewSection(const SMCStates *states, const char *n
 			{
 				m_ParseState = PSTATE_GAMEDEFS_SIGNATURES;
 			}
-			else if (strcmp(name, "CRC") == 0)
-			{
-				m_ParseState = PSTATE_GAMEDEFS_CRC;
-				m_ShouldBeReadingDefault = false;
-				m_CurrentBinCRCValid = false;
-				m_CurrentCRCLibrary[0] = '\0';
-				strncopy(m_CurrentCRCSection, m_Game, sizeof(m_CurrentCRCSection));
-				m_CurrentCRCMatched = false;
-				m_LastCRCExpected = 0;
-				m_LastCRCPlatform[0] = '\0';
-			}
 			else if (strcmp(name, "Addresses") == 0)
 			{
 				m_ParseState = PSTATE_GAMEDEFS_ADDRESSES;
@@ -211,43 +196,6 @@ SMCResult CGameConfig::ReadSMC_NewSection(const SMCStates *states, const char *n
 
 			m_ParseState = PSTATE_GAMEDEFS_SIGNATURES_SIG;
 			m_MatchedPlatform = false;
-			break;
-		}
-		case PSTATE_GAMEDEFS_CRC:
-		{
-			m_CurrentBinCRCValid = false;
-
-			char error[255];
-			error[0] = '\0';
-
-			GameBinaryInfo binaryInfo;
-
-			if (!ConfigManager.TryGetGameBinaryInfo(name, &binaryInfo))
-			{
-				ke::SafeSprintf(error, sizeof(error), "Unrecognized library \"%s\"", name);
-			}
-			else if (!binaryInfo.crcOk)
-			{
-				ke::SafeSprintf(error, sizeof(error), "Could not get CRC for binary: %s", name);
-			}
-			else
-			{
-				m_CurrentBinCRCValid = true;
-				m_CurrentBinCRC = binaryInfo.crc;
-				m_ParseState = PSTATE_GAMEDEFS_CRC_BINARY;
-				strncopy(m_CurrentCRCLibrary, name, sizeof(m_CurrentCRCLibrary));
-				m_CurrentCRCMatched = false;
-				m_LastCRCExpected = 0;
-				m_LastCRCPlatform[0] = '\0';
-			}
-
-			if (error[0] != '\0')
-			{
-				m_IgnoreLevel = 1;
-				AMXXLOG_Error("Error while parsing CRC section for \"%s\" (%s):", m_Game, m_CurrentPath);
-				AMXXLOG_Error("%s", error);
-			}
-
 			break;
 		}
 		case PSTATE_GAMEDEFS_CUSTOM:
@@ -442,30 +390,6 @@ SMCResult CGameConfig::ReadSMC_KeyValue(const SMCStates *states, const char *key
 			}
 			break;
 		}
-		case PSTATE_GAMEDEFS_CRC_BINARY:
-		{
-                        if (g_LibSys.DoesPlatformMatch(key) && m_CurrentBinCRCValid)
-			{
-				unsigned int crc = 0;
-				sscanf(value, "%08X", &crc);
-				char currentHex[9];
-				ke::SafeSprintf(currentHex, sizeof(currentHex), "%08X", m_CurrentBinCRC);
-				const char *libraryName = m_CurrentCRCLibrary[0] ? m_CurrentCRCLibrary : "<unknown>";
-
-				if (m_CurrentBinCRC == crc)
-				{
-					m_CurrentCRCMatched = true;
-					AMXXLOG_Log("GameConfig CRC match for game \"%s\" section \"%s\" library \"%s\" platform \"%s\" (%s)",
-								m_Game, m_CurrentCRCSection, libraryName, key, currentHex);
-				}
-				else
-				{
-					m_LastCRCExpected = crc;
-					strncopy(m_LastCRCPlatform, key, sizeof(m_LastCRCPlatform));
-				}
-			}
-			break;
-		}
 		case PSTATE_GAMEDEFS_ADDRESSES_ADDRESS:
 		case PSTATE_GAMEDEFS_ADDRESSES_ADDRESS_READ:
 		{
@@ -582,7 +506,6 @@ SMCResult CGameConfig::ReadSMC_LeavingSection(const SMCStates *states)
 			break;
 		}
 		case PSTATE_GAMEDEFS_SUPPORTED:
-		case PSTATE_GAMEDEFS_CRC:
 		{
 			if (!m_ShouldBeReadingDefault)
 			{
@@ -593,35 +516,6 @@ SMCResult CGameConfig::ReadSMC_LeavingSection(const SMCStates *states)
 			{
 				m_ParseState = PSTATE_GAMEDEFS;
 			}
-			break;
-		}
-		case PSTATE_GAMEDEFS_CRC_BINARY:
-		{
-                        if (!m_CurrentCRCMatched && m_CurrentBinCRCValid && m_LastCRCExpected != 0)
-			{
-				const char *libraryName = m_CurrentCRCLibrary[0] ? m_CurrentCRCLibrary : "<unknown>";
-				const char *platform = m_LastCRCPlatform[0] ? m_LastCRCPlatform : "<unknown>";
-				char expectedHex[9];
-				char actualHex[9];
-				if (m_LastCRCExpected)
-				{
-					ke::SafeSprintf(expectedHex, sizeof(expectedHex), "%08X", m_LastCRCExpected);
-				}
-				else
-				{
-					strncopy(expectedHex, "????????", sizeof(expectedHex));
-				}
-				ke::SafeSprintf(actualHex, sizeof(actualHex), "%08X", m_CurrentBinCRC);
-
-				AMXXLOG_Log("GameConfig CRC mismatch for game \"%s\" section \"%s\" library \"%s\" platform \"%s\" expected %s got %s",
-							m_Game, m_CurrentCRCSection, libraryName, platform, expectedHex, actualHex);
-			}
-
-                        // Reset state for next library in the same CRC block
-                        m_CurrentCRCMatched = false;
-                        m_LastCRCExpected = 0;
-                        m_LastCRCPlatform[0] = '\0';
-			m_ParseState = PSTATE_GAMEDEFS_CRC;
 			break;
 		}
 		case PSTATE_GAMEDEFS_SIGNATURES:
@@ -860,8 +754,6 @@ bool CGameConfig::EnterFile(const char *file, char *error, size_t maxlength)
 	m_IgnoreLevel = 0;
 	m_ShouldBeReadingDefault = true;
 	m_ParseState = PSTATE_NONE;
-	m_CurrentBinCRC = 0;
-	m_CurrentBinCRCValid = false;
 
 	SMCError err;
 	SMCStates state = { 0, 0 };
@@ -1189,82 +1081,17 @@ void CGameConfigManager::CacheGameBinaryInfo(const char *library)
 {
 	GameBinaryInfo info;
 
-	char path[PLATFORM_MAX_PATH];
-	path[0] = '\0';
-
 	void *baseAddress = nullptr;
 
-	if (!ResolveLibraryInfo(library, &baseAddress, path, sizeof(path)))
+	if (ResolveLibraryInfo(library, &baseAddress))
 	{
-		m_BinaryInfos.insert(library, info);
-		return;
-	}
-
-	info.baseAddress = baseAddress;
-
-	if (path[0])
-	{
-		FILE *fp = fopen(path, "rb");
-
-		if (fp)
-		{
-			if (fseek(fp, 0, SEEK_END) == 0)
-			{
-				long sizeLong = ftell(fp);
-
-				if (sizeLong >= 0 && fseek(fp, 0, SEEK_SET) == 0)
-				{
-					size_t size = static_cast<size_t>(sizeLong);
-					void *buffer = nullptr;
-
-					if (size > 0)
-					{
-						buffer = malloc(size);
-
-						if (buffer)
-						{
-							size_t read = fread(buffer, 1, size, fp);
-
-							if (read == size)
-							{
-								info.crc = UTIL_CRC32(buffer, size);
-								info.crcOk = true;
-							}
-
-							free(buffer);
-						}
-					}
-					else
-					{
-						info.crc = UTIL_CRC32(nullptr, 0);
-						info.crcOk = true;
-					}
-				}
-			}
-
-			fclose(fp);
-		}
-	}
-	else
-	{
-		AMXXLOG_Log("GameConfig CRC unable to resolve path for library \"%s\"", library);
-	}
-
-	if (info.crcOk)
-	{
-		char hex[9];
-		ke::SafeSprintf(hex, sizeof(hex), "%08X", info.crc);
-		AMXXLOG_Log("GameConfig CRC computed %s=%s (%s)", library, hex, path[0] ? path : "<unknown>");
-	}
-	else
-	{
-		AMXXLOG_Log("GameConfig CRC missing for library \"%s\"", library);
+		info.baseAddress = baseAddress;
 	}
 
 	m_BinaryInfos.insert(library, info);
 }
 
-bool CGameConfigManager::ResolveLibraryInfo(const char *library, void **baseAddress, char *pathBuffer, size_t pathBufferSize)
+bool CGameConfigManager::ResolveLibraryInfo(const char *library, void **baseAddress)
 {
 	void *symbol = nullptr;
 
@@ -1298,14 +1125,6 @@ bool CGameConfigManager::ResolveLibraryInfo(const char *library, void **baseAddr
 	{
 		*baseAddress = memoryInfo.AllocationBase;
 	}
-
-	if (pathBuffer && pathBufferSize)
-	{
-		if (!GetModuleFileNameA(reinterpret_cast<HMODULE>(memoryInfo.AllocationBase), pathBuffer, static_cast<DWORD>(pathBufferSize)))
-		{
-			pathBuffer[0] = '\0';
-		}
-	}
 #elif defined PLATFORM_POSIX
 	Dl_info info;
 
@@ -1317,18 +1136,6 @@ bool CGameConfigManager::ResolveLibraryInfo(const char *library, void **baseAddr
 	if (baseAddress)
 	{
 		*baseAddress = info.dli_fbase;
-	}
-
-	if (pathBuffer && pathBufferSize)
-	{
-		if (info.dli_fname && info.dli_fname[0])
-		{
-			ke::SafeSprintf(pathBuffer, pathBufferSize, "%s", info.dli_fname);
-		}
-		else
-		{
-			pathBuffer[0] = '\0';
-		}
 	}
 #endif
 

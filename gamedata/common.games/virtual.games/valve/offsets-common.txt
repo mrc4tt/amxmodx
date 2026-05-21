@@ -1090,17 +1090,6 @@
 
     "*" // Build 8684
     {
-        "CRC"
-        {
-            "server"
-            {
-                "windows" "63458B85" // valve/dlls/hl.dll
-                "windows" "24124B9D" // dmc/dlls/dmc.dll
-                "linux" "E9A2A805" // valve/dlls/hl.so
-                "linux" "A9EF40F9" // dmc/dlls/dmc.so
-            }
-        }
-
         "Offsets"
         {
             "pev"

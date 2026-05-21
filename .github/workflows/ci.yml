@@ -128,7 +128,39 @@ jobs:
           cd build
           python3 ../configure.py --enable-optimize --metamod=${{ env.DEPENDENCIES_ROOT }}/metamod-am --hlsdk=${{ env.DEPENDENCIES_ROOT }}/hlsdk --mysql=${{ env.DEPENDENCIES_ROOT }}/mysql-5.5
           ambuild
-      
+
+      - name: Bundle ReAPI module (Linux)
+        if: startsWith(runner.os, 'Linux')
+        working-directory: amxmodx
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          # Source the ReAPI module from the release matching the major.minor
+          # in plugins/include/reapi_version.inc, so the bundled module always
+          # agrees with the includes shipped in this same package.
+          verfile=plugins/include/reapi_version.inc
+          major=$(grep -oP '#define\s+REAPI_VERSION_MAJOR\s+\K[0-9]+' "$verfile")
+          minor=$(grep -oP '#define\s+REAPI_VERSION_MINOR\s+\K[0-9]+' "$verfile")
+          tag=$(gh release list --repo rehlds/ReAPI --limit 50 --json tagName --jq '.[].tagName' \
+            | grep -m1 "^${major}\.${minor}\.") || true
+          if [ -z "${tag:-}" ]; then
+            echo "::error::No ReAPI release matching ${major}.${minor}.*"
+            exit 1
+          fi
+          echo "Bundling ReAPI module from release $tag"
+          tmp=$(mktemp -d)
+          gh release download "$tag" --repo rehlds/ReAPI --pattern '*.zip' --dir "$tmp"
+          unzip -q "$tmp"/*.zip -d "$tmp/x"
+          dest=build/packages/cstrike/addons/amxmodx/modules
+          if [ ! -d "$dest" ]; then
+            echo "::error::cstrike package modules dir not found: $dest"
+            exit 1
+          fi
+          cp "$tmp/x/addons/amxmodx/modules/reapi_amxx_i386.so" "$dest/"
+          ls -l "$dest/reapi_amxx_i386.so"
+
       - name: Package Linux builds
         if: startsWith(runner.os, 'Linux')
         working-directory: amxmodx

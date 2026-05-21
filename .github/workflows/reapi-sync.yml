@@ -1,0 +1,100 @@
+name: Sync ReAPI includes
+
+# Watches rehlds/ReAPI releases and opens a PR when a newer release exists,
+# updating plugins/include/reapi*.inc from that release. The matching module
+# binary (reapi_amxx_i386.so) is bundled separately at build time by ci.yml,
+# both sourced from the same ReAPI release so includes and module never drift.
+#
+# Requires repo setting: Settings -> Actions -> General ->
+# "Allow GitHub Actions to create and approve pull requests".
+
+on:
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    name: Sync ReAPI includes from latest release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Sync includes from latest ReAPI release
+        id: sync
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          ver_int() { grep -oP '#define\s+REAPI_VERSION\s+\K[0-9]+' "$1"; }
+
+          current=$(ver_int plugins/include/reapi_version.inc)
+          tag=$(gh release view --repo rehlds/ReAPI --json tagName --jq .tagName)
+          echo "Repo REAPI_VERSION: $current"
+          echo "Latest ReAPI release: $tag"
+
+          tmp=$(mktemp -d)
+          gh release download "$tag" --repo rehlds/ReAPI --pattern '*.zip' --dir "$tmp"
+          unzip -q "$tmp"/*.zip -d "$tmp/x"
+          src="$tmp/x/addons/amxmodx/scripting/include"
+
+          new=$(ver_int "$src/reapi_version.inc")
+          echo "Release REAPI_VERSION: $new"
+
+          if [ "$new" -le "$current" ]; then
+            echo "Already up to date."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          for f in cssdk_const reapi reapi_engine reapi_engine_const reapi_gamedll \
+                   reapi_gamedll_const reapi_rechecker reapi_reunion reapi_version reapi_vtc; do
+            cp "$src/$f.inc" "plugins/include/$f.inc"
+          done
+
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "new=$new" >> "$GITHUB_OUTPUT"
+          echo "current=$current" >> "$GITHUB_OUTPUT"
+
+      - name: Open / update pull request
+        if: steps.sync.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          branch=chore/reapi-sync
+          tag="${{ steps.sync.outputs.tag }}"
+
+          git config user.name "amxmodx ReAPI Bot"
+          git config user.email "actions@github.com"
+
+          git checkout -B "$branch"
+          git add plugins/include/
+          git commit -m "chore: sync ReAPI includes from rehlds/ReAPI $tag"
+          git push -f origin "$branch"
+
+          body=$(cat <<EOF
+          Automated ReAPI include sync.
+
+          Source: rehlds/ReAPI release \`$tag\`
+          REAPI_VERSION: ${{ steps.sync.outputs.new }} (was ${{ steps.sync.outputs.current }})
+
+          The matching module binary (\`reapi_amxx_i386.so\`) is bundled into the
+          cstrike package at build time by \`.github/workflows/ci.yml\`, sourced
+          from the same ReAPI release — includes and module stay in lockstep.
+
+          Review for breaking API changes before merging.
+          EOF
+          )
+
+          gh pr create --base main --head "$branch" \
+            --title "chore: sync ReAPI includes $tag" \
+            --body "$body" \
+            --label dependencies \
+            || gh pr edit "$branch" --title "chore: sync ReAPI includes $tag" --body "$body"

@@ -34,15 +34,6 @@
 
 	"*" // Build 8684 - Windows
 	{
-		"CRC"
-		{
-			"engine"
-			{
-				"windows" "F7DCFFD9" // hw.dll
-				"windows" "2C9EDE6B" // swds.dll
-			}
-		}
-
 		"Signatures"
 		{
 			"SV_DropClient"
