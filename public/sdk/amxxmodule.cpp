@@ -2009,10 +2009,20 @@ static NEW_DLL_FUNCTIONS g_NewFuncs_Table =
 #else
 	NULL,
 #endif
+#ifdef FN_CvarValue
+    CvarValue,
+#else
+    NULL,
+#endif
+#ifdef FN_CvarValue2
+    CvarValue2,
+#else
+    NULL,
+#endif
 };
 
 
-static NEW_DLL_FUNCTIONS g_NewFuncs_Post_Table = 
+static NEW_DLL_FUNCTIONS g_NewFuncs_Post_Table =
 {
 #ifdef FN_OnFreeEntPrivateData_Post
 	FN_OnFreeEntPrivateData_Post,
@@ -2028,6 +2038,16 @@ static NEW_DLL_FUNCTIONS g_NewFuncs_Post_Table =
 	ShouldCollide_Post,
 #else
 	NULL,
+#endif
+#ifdef FN_CvarValue_Post
+    CvarValue_Post,
+#else
+    NULL,
+#endif
+#ifdef FN_CvarValue2_Post
+    CvarValue2_Post,
+#else
+    NULL,
 #endif
 };
 
