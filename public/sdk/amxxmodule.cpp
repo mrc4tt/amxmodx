@@ -3081,10 +3081,6 @@ unsigned short FixedUnsigned16( float value, float scale )
 }
 #endif // USE_METAMOD
 
-template unsigned int strncopy<char, char>(char *, const char *src, size_t count);
-template unsigned int strncopy<cell, char>(cell *, const char *src, size_t count);
-template unsigned int strncopy<cell, cell>(cell *, const cell *src, size_t count);
-
 template <typename D, typename S>
 unsigned int strncopy(D *dest, const S *src, size_t count)
 {
@@ -3104,3 +3100,7 @@ unsigned int strncopy(D *dest, const S *src, size_t count)
 
 	return (dest - start);
 }
+
+template unsigned int strncopy<char, char>(char *, const char *src, size_t count);
+template unsigned int strncopy<cell, char>(cell *, const char *src, size_t count);
+template unsigned int strncopy<cell, cell>(cell *, const cell *src, size_t count);

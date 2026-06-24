@@ -105,6 +105,7 @@ float g_task_time;
 float g_auth_time;
 
 bool g_initialized = false;
+bool g_in_plugin_boot = false;
 bool g_coloredmenus;
 bool g_activated = false;
 bool g_NewDLL_Available = false;
@@ -369,6 +370,7 @@ int	C_Spawn(edict_t *pent)
 
 	g_activated = false;
 	g_initialized = true;
+	g_in_plugin_boot = true;
 	g_forcedmodules = false;
 	g_forcedsounds = false;
 
@@ -672,6 +674,9 @@ void C_ServerActivate_Post(edict_t *pEdictList, int edictCount, int clientMax)
 
 	executeForwards(FF_PluginInit);
 	executeForwards(FF_PluginCfg);
+
+	// All boot-time plugin forwards have run; stop emitting per-plugin boot breadcrumbs.
+	g_in_plugin_boot = false;
 
 	CoreCfg.ExecuteAutoConfigs();   // Execute configs created with AutoExecConfig native.
 	CoreCfg.SetMapConfigTimer(6.1); // Prepare per-map configs to be executed 6.1 seconds later.

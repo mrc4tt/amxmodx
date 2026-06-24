@@ -472,8 +472,7 @@ AMXX.utf8rewind = builder.RunScript(
   'third_party/utf8rewind/AMBuilder'
 )
 
-builder.RunBuildScripts(
-  [
+build_scripts = [
     'amxmodx/AMBuilder',
     'compiler/amxxpc/AMBuilder',
     'compiler/libpc300/AMBuilder',
@@ -496,15 +495,32 @@ builder.RunBuildScripts(
     'modules/tfcx/AMBuilder',
     'modules/ts/tsfun/AMBuilder',
     'modules/ts/tsx/AMBuilder',
-  ],
-  { 'AMXX': AMXX }
-)
+]
+
+# Optional partial build: AMXX_TARGETS="cs dod" limits to matching scripts.
+# 'cs' aliases to 'cstrike'. Empty/unset builds everything (default).
+_targets = os.getenv('AMXX_TARGETS', '').replace(',', ' ').split()
+_wanted = []
+for _t in _targets:
+  _t = _t.strip().lower()
+  if not _t:
+    continue
+  _wanted.append('cstrike' if _t == 'cs' else _t)
+
+if _wanted:
+  build_scripts = [s for s in build_scripts if any(w in s.lower() for w in _wanted)]
+  if not build_scripts:
+    raise Exception('AMXX_TARGETS matched no build scripts: ' + os.getenv('AMXX_TARGETS', ''))
+
+builder.RunBuildScripts(build_scripts, { 'AMXX': AMXX })
 
 # The csstats.dat reader is Windows-only.
-if builder.target_platform == 'windows':
+if builder.target_platform == 'windows' and (not _wanted or 'cstrike' in _wanted):
   builder.RunScript('modules/cstrike/csx/WinCSX/AMBuilder', { 'AMXX': AMXX })
 
-if builder.backend == 'amb2':
+# Plugins + packaging only on a full build; partial builds emit module binaries
+# into obj-*/ without rebuilding the whole package tree.
+if builder.backend == 'amb2' and not _wanted:
   builder.RunBuildScripts([
       'plugins/AMBuilder',
       'support/PackageScript',

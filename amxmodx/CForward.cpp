@@ -123,6 +123,14 @@ cell CForward::execute(cell *params, ForwardPreparedArray *preparedArrays)
 			g_BinLog.WriteOp(BinLog_CallPubFunc, iter->pPlugin->getId(), iter->func);
 #endif
 
+			// Crash breadcrumb for boot-time forwards (plugin_precache / plugin_init /
+			// plugin_cfg). Flushed before the call, so if a plugin crashes the server
+			// while booting, this is the last line and names the plugin + forward.
+			if (g_in_plugin_boot)
+			{
+				AMXXLOG_Log("[AMXX] Executing \"%s\" in plugin \"%s\"...", m_Name.chars(), iter->pPlugin->getName());
+			}
+
 			int err = amx_ExecPerf(amx, &retVal, iter->func);
 			// log runtime error, if any
 			if (err != AMX_ERR_NONE)

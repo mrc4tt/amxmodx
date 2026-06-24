@@ -194,6 +194,7 @@ extern bool g_bmod_valve;
 extern bool g_bmod_gearbox;
 extern bool g_official_mod;
 extern bool g_dontprecache;
+extern bool g_in_plugin_boot;
 extern int g_srvindex;
 extern cvar_t* amxmodx_version;
 extern cvar_t* amxmodx_debug;

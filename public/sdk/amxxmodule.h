@@ -2045,6 +2045,7 @@ void FN_CvarValue_Post(const edict_t *pEdict, const char *value);
 
 #ifdef FN_CvarValue2_Post
 void FN_CvarValue2_Post(const edict_t *pEdict, int requestID, const char *cvarName, const char* value);
+#endif // FN_CvarValue2_Post
 #endif // USE_METAMOD
 
 

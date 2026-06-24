@@ -138,6 +138,11 @@ int CPluginMngr::loadPluginsFromFile(const char* filename, bool warn)
 			continue;
 		}
 
+		// Crash breadcrumb: written (and flushed) before the plugin's VM is initialized.
+		// If the server crashes while loading, this is the last "Loading" line with no
+		// matching result, naming the plugin file responsible.
+		AMXXLOG_Log("[AMXX] Loading plugin \"%s\"...", pluginName);
+
 		CPlugin* plugin = loadPlugin(pluginsDir, pluginName, error, sizeof(error), debugFlag);
 
 		if (plugin->getStatusCode() == ps_bad_load)
