@@ -1552,6 +1552,10 @@ endround_stats()
 	// Get and save round end stats time.
 	g_fShowStatsTime = get_gametime()
 
+	// Capture round stats for all players that have not been
+	// processed yet before any round-end award is computed, so
+	// awards like the most disruptive player are based on the
+	// complete dataset.
 	for (iPlayer = 0; iPlayer < iPlayers; iPlayer++)
 	{
 		id = iaPlayers[iPlayer]
@@ -1560,6 +1564,11 @@ endround_stats()
 		{
 			kill_stats(id)
 		}
+	}
+
+	for (iPlayer = 0; iPlayer < iPlayers; iPlayer++)
+	{
+		id = iaPlayers[iPlayer]
 
 		if (!g_izStatsSwitch[id])
 			continue
