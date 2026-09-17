@@ -3,13 +3,13 @@ on:
   workflow_dispatch:
   push:
     branches:
-     - master
+     - main
      - 1.9-dev
     tags:
      - 'v*'
   pull_request:
     branches:
-     - master
+     - main
      - 1.9-dev
 jobs:
   test:
@@ -36,7 +36,7 @@ jobs:
       DEPENDENCIES_ROOT: ${{ github.workspace }}/dependencies      
       DEPENDENCIES_ROOT_WIN: ${{ github.workspace }}\dependencies
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           submodules: recursive
           path: amxmodx
@@ -54,7 +54,7 @@ jobs:
           echo "git_commit_count=${GIT_COMMIT_COUNT}" >> $GITHUB_OUTPUT
       
       # Setup Python for AMBuild
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         name: Setup Python 3.10
         with:
           python-version: "3.10"
@@ -83,6 +83,7 @@ jobs:
           curl -L -o "%DEPENDENCIES_ROOT_WIN%\nasm\nasm.zip" https://www.nasm.us/pub/nasm/releasebuilds/2.13.03/win32/nasm-2.13.03-win32.zip
           chdir %DEPENDENCIES_ROOT_WIN%\nasm
           7z x nasm.zip
+          echo %DEPENDENCIES_ROOT_WIN%\nasm\nasm-2.13.03>> %GITHUB_PATH%
           
           chdir %DEPENDENCIES_ROOT_WIN%
           git clone https://github.com/alliedmodders/ambuild
@@ -116,8 +117,6 @@ jobs:
           echo "CXX=${{ matrix.compiler_cxx }}" >> $GITHUB_ENV
           ${{ matrix.compiler_cc }} --version
           ${{ matrix.compiler_cxx }} --version
-      
-      - uses: ilammy/setup-nasm@v1
       
       - name: Build Linux
         if: startsWith(runner.os, 'Linux')
@@ -172,7 +171,7 @@ jobs:
           
           cd build/packages
           
-          for pkg in base cstrike dod esf ns tfc ts; do
+          for pkg in base cstrike; do
             if [ -d "$pkg" ]; then
               echo "=== Packaging $pkg ==="
               cd "$pkg"
@@ -194,21 +193,19 @@ jobs:
       
       - name: Upload Linux artifacts
         if: startsWith(runner.os, 'Linux') && always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: amxmodx-${{ matrix.os_short }}-${{ github.sha }}
           path: amxmodx/dist/*.tar.gz
           retention-days: 7
-      
-      - uses: ilammy/msvc-dev-cmd@v1
-        with:
-          arch: x86
       
       - name: Build Windows
         if: startsWith(runner.os, 'Windows')
         working-directory: amxmodx
         shell: cmd
         run: |
+          for /f "usebackq delims=" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -property installationPath`) do set "VSROOT=%%i"
+          call "%VSROOT%\VC\Auxiliary\Build\vcvarsall.bat" x86 || exit /b 1
           cl.exe
           mkdir build
           cd build
@@ -227,7 +224,7 @@ jobs:
           
           Set-Location build\packages
           
-          $packages = @('base', 'cstrike', 'dod', 'esf', 'ns', 'tfc', 'ts')
+          $packages = @('base', 'cstrike')
           
           foreach ($pkg in $packages) {
             if (Test-Path $pkg) {
@@ -251,7 +248,7 @@ jobs:
       
       - name: Upload Windows artifacts
         if: startsWith(runner.os, 'Windows') && always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: amxmodx-${{ matrix.os_short }}-${{ github.sha }}
           path: amxmodx/dist/*.zip
@@ -266,7 +263,7 @@ jobs:
       contents: write
     steps:
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: artifacts
       
@@ -295,30 +292,61 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
       
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || format('v{0}', steps.ver.outputs.version) }}
-          name: ${{ startsWith(github.ref, 'refs/tags/v') && format('AMX Mod X {0}', steps.ver.outputs.version) || format('AMX Mod X Dev Build {0}', steps.ver.outputs.version) }}
-          body: |
-            AMX Mod X automated build
-
-            Version: ${{ steps.ver.outputs.version }}
-            Commit: ${{ github.sha }}
-
-            **Packages included:**
-            - Base (all games)
-            - Counter-Strike (cstrike)
-            - Day of Defeat (dod)
-            - Earth's Special Forces (esf)
-            - Natural Selection (ns)
-            - Team Fortress Classic (tfc)
-            - The Specialists (ts)
-
-            Each package is available for both Linux (.tar.gz) and Windows (.zip).
-          files: |
-            artifacts/**/*.tar.gz
-            artifacts/**/*.zip
-          draft: false
-          prerelease: ${{ !startsWith(github.ref, 'refs/tags/v') }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || format('v{0}', steps.ver.outputs.version) }}
+          TITLE: ${{ startsWith(github.ref, 'refs/tags/v') && format('AMX Mod X {0}', steps.ver.outputs.version) || format('AMX Mod X Dev Build {0}', steps.ver.outputs.version) }}
+          PRERELEASE: ${{ !startsWith(github.ref, 'refs/tags/v') }}
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: |
+          set -euo pipefail
+
+          # GitHub's API occasionally answers with a 5xx "Unicorn" page;
+          # retry instead of failing the whole release.
+          retry() {
+            local n=1 max=5
+            until "$@"; do
+              if [ "$n" -ge "$max" ]; then
+                echo "::error::'$*' failed after $max attempts"
+                return 1
+              fi
+              echo "Attempt $n failed, retrying in $((n * 15))s..."
+              sleep $((n * 15))
+              n=$((n + 1))
+            done
+          }
+
+          mapfile -t files < <(find artifacts -type f \
+            \( -name '*-base-*' -o -name '*-cstrike-*' \) \
+            \( -name '*.tar.gz' -o -name '*.zip' \) | sort)
+          if [ "${#files[@]}" -ne 4 ]; then
+            echo "::error::Expected 4 packages (base+cstrike for linux+windows), found ${#files[@]}"
+            printf '%s\n' "${files[@]}"
+            exit 1
+          fi
+
+          cat > notes.md <<EOF
+          AMX Mod X automated build
+
+          Version: ${VERSION}
+          Commit: ${GITHUB_SHA}
+
+          **Packages included:**
+          - Base (all games)
+          - Counter-Strike (cstrike)
+
+          Each package is available for both Linux (.tar.gz) and Windows (.zip).
+          EOF
+
+          flags=()
+          if [ "$PRERELEASE" = "true" ]; then flags+=(--prerelease); fi
+
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            retry gh release create "$TAG" --target "$GITHUB_SHA" \
+              --title "$TITLE" --notes-file notes.md "${flags[@]}"
+          fi
+
+          for f in "${files[@]}"; do
+            retry gh release upload "$TAG" "$f" --clobber
+          done
