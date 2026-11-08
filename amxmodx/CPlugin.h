@@ -134,6 +134,9 @@ public:
 	
 	inline CPlugin* findPluginFast(AMX *amx) { return (CPlugin*)(amx->userdata[UD_FINDPLUGIN]); }
 	CPlugin* findPlugin(AMX *amx);
+	// The plugin whose script is being loaded right now (its plugin_natives runs before
+	// UD_FINDPLUGIN is set), or NULL
+	static CPlugin* loadingPlugin(AMX *amx);
 	CPlugin* findPlugin(int index);
 	CPlugin* findPlugin(const char* name);
 	

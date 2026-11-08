@@ -4128,6 +4128,17 @@ static cell AMX_NATIVE_CALL set_fail_state(AMX *amx, cell *params)
 
 	CPluginMngr::CPlugin *pPlugin = g_plugins.findPluginFast(amx);
 
+	// Called from plugin_natives the plugin is still loading and not findable the fast way
+	if (!pPlugin)
+		pPlugin = CPluginMngr::loadingPlugin(amx);
+
+	if (!pPlugin)
+	{
+		AMXXLOG_Error("[AMXX] A plugin that is not loaded is setting itself as failed: %s", str);
+		LogError(amx, AMX_ERR_EXIT, NULL);
+		return 0;
+	}
+
 	pPlugin->setStatus(ps_error);
 	pPlugin->setError(str);
 
