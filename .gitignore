@@ -1,4 +1,7 @@
 build/
 *.sh
+!support/local-release.sh
 dist/
-docker/
+docker/*
+!docker/Dockerfile.linux
+!docker/Dockerfile.windows

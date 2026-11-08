@@ -1,16 +1,9 @@
 name: Continuous Integration
-on: 
+# Manual only: releases are built and published on the RE server
+# (support/local-release.sh via server-ops / ops.miksen.me -> Releases).
+on:
   workflow_dispatch:
-  push:
-    branches:
-     - main
-     - 1.9-dev
-    tags:
-     - 'v*'
-  pull_request:
-    branches:
-     - main
-     - 1.9-dev
+
 jobs:
   test:
     outputs:
@@ -142,7 +135,7 @@ jobs:
           verfile=plugins/include/reapi_version.inc
           major=$(grep -oP '#define\s+REAPI_VERSION_MAJOR\s+\K[0-9]+' "$verfile")
           minor=$(grep -oP '#define\s+REAPI_VERSION_MINOR\s+\K[0-9]+' "$verfile")
-          tag=$(gh release list --repo rehlds/ReAPI --limit 50 --json tagName --jq '.[].tagName' \
+          tag=$(gh release list --repo mrc4tt/ReAPI --limit 50 --json tagName --jq '.[].tagName' \
             | grep -m1 "^${major}\.${minor}\.") || true
           if [ -z "${tag:-}" ]; then
             echo "::error::No ReAPI release matching ${major}.${minor}.*"
@@ -150,7 +143,7 @@ jobs:
           fi
           echo "Bundling ReAPI module from release $tag"
           tmp=$(mktemp -d)
-          gh release download "$tag" --repo rehlds/ReAPI --pattern '*.zip' --dir "$tmp"
+          gh release download "$tag" --repo mrc4tt/ReAPI --pattern '*.zip' --dir "$tmp"
           unzip -q "$tmp"/*.zip -d "$tmp/x"
           dest=build/packages/cstrike/addons/amxmodx/modules
           if [ ! -d "$dest" ]; then

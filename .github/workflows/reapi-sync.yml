@@ -1,6 +1,6 @@
 name: Sync ReAPI includes
 
-# Watches rehlds/ReAPI releases and opens a PR when a newer release exists,
+# Watches mrc4tt/ReAPI releases and opens a PR when a newer release exists,
 # updating plugins/include/reapi*.inc from that release. The matching module
 # binary (reapi_amxx_i386.so) is bundled separately at build time by ci.yml,
 # both sourced from the same ReAPI release so includes and module never drift.
@@ -8,9 +8,9 @@ name: Sync ReAPI includes
 # Requires repo setting: Settings -> Actions -> General ->
 # "Allow GitHub Actions to create and approve pull requests".
 
+# Manual only (no Actions on a schedule); the release packages bundle the ReAPI
+# module and includes from the latest mrc4tt/ReAPI release anyway.
 on:
-  schedule:
-    - cron: '0 6 * * *'
   workflow_dispatch:
 
 permissions:
@@ -34,12 +34,12 @@ jobs:
           ver_int() { grep -oP '#define\s+REAPI_VERSION\s+\K[0-9]+' "$1"; }
 
           current=$(ver_int plugins/include/reapi_version.inc)
-          tag=$(gh release view --repo rehlds/ReAPI --json tagName --jq .tagName)
+          tag=$(gh release view --repo mrc4tt/ReAPI --json tagName --jq .tagName)
           echo "Repo REAPI_VERSION: $current"
           echo "Latest ReAPI release: $tag"
 
           tmp=$(mktemp -d)
-          gh release download "$tag" --repo rehlds/ReAPI --pattern '*.zip' --dir "$tmp"
+          gh release download "$tag" --repo mrc4tt/ReAPI --pattern '*.zip' --dir "$tmp"
           unzip -q "$tmp"/*.zip -d "$tmp/x"
           src="$tmp/x/addons/amxmodx/scripting/include"
 
@@ -76,13 +76,13 @@ jobs:
 
           git checkout -B "$branch"
           git add plugins/include/
-          git commit -m "chore: sync ReAPI includes from rehlds/ReAPI $tag"
+          git commit -m "chore: sync ReAPI includes from mrc4tt/ReAPI $tag"
           git push -f origin "$branch"
 
           body=$(cat <<EOF
           Automated ReAPI include sync.
 
-          Source: rehlds/ReAPI release \`$tag\`
+          Source: mrc4tt/ReAPI release \`$tag\`
           REAPI_VERSION: ${{ steps.sync.outputs.new }} (was ${{ steps.sync.outputs.current }})
 
           The matching module binary (\`reapi_amxx_i386.so\`) is bundled into the

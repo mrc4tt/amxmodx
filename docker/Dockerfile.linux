@@ -1,0 +1,38 @@
+# Mirrors the Linux job in .github/workflows/ci.yml (ubuntu-22.04, gcc-9 multilib).
+# Builds a 32-bit AMX Mod X. Deps baked into the image so rebuilds are fast.
+FROM ubuntu:22.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV DEPS=/deps
+
+# Toolchain + 32-bit libs + nasm + python (matches CI "Install Linux dependencies").
+RUN dpkg --add-architecture i386 && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+      ca-certificates git curl wget unzip xz-utils \
+      gcc-9 g++-9 gcc-9-multilib g++-9-multilib \
+      gcc-multilib g++-multilib libstdc++6 lib32stdc++6 \
+      libc6-dev libc6-dev-i386 linux-libc-dev linux-libc-dev:i386 \
+      lib32z1-dev nasm \
+      python3 python3-pip python3-setuptools python3-wheel && \
+    rm -rf /var/lib/apt/lists/*
+
+# CI uses gcc-9 / g++-9.
+ENV CC=gcc-9
+ENV CXX=g++-9
+
+# Build deps: metamod-hl1, hlsdk, mysql 5.5 (32-bit), AMBuild.
+WORKDIR ${DEPS}
+RUN git clone --depth 1 https://github.com/alliedmodders/metamod-hl1 metamod-am && \
+    git clone --depth 1 https://github.com/alliedmodders/hlsdk && \
+    git clone --depth 1 https://github.com/alliedmodders/ambuild && \
+    python3 -m pip install --no-cache-dir ./ambuild
+
+RUN curl -fsSL -o mysql.tar.gz \
+      http://cdn.mysql.com/archives/mysql-5.5/mysql-5.5.57-linux-glibc2.12-i686.tar.gz && \
+    tar zxf mysql.tar.gz && \
+    mv mysql-5.5.57-linux-glibc2.12-i686 mysql-5.5 && \
+    rm mysql.tar.gz
+
+WORKDIR /src
+ENTRYPOINT ["/bin/bash"]
