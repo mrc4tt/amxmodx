@@ -149,9 +149,7 @@ static cell AMX_NATIVE_CALL get_tr(AMX *amx, cell *params)
 		}
 	case TR_pHit:
 		{
-			if (FNullEnt(gfm_tr->pHit))
-				return -1;
-			return ENTINDEX(gfm_tr->pHit);
+			return TraceHitIndex(gfm_tr->pHit);
 		}
 	case TR_iHitgroup:
 		{

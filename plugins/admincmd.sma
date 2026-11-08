@@ -201,6 +201,7 @@ public cmdKick(id, level, cid)
 	userid2 = get_user_userid(player)
 	read_argv(2, reason, charsmax(reason))
 	remove_quotes(reason)
+	sanitizeQuotedArg(reason, charsmax(reason))
 	
 	log_amx("Kick: ^"%s<%d><%s><>^" kick ^"%s<%d><%s><>^" (reason ^"%s^")", name, get_user_userid(id), authid, name2, userid2, authid2, reason)
 
@@ -228,7 +229,27 @@ public cmdKick(id, level, cid)
  */
 isCommandArgSafe(const arg[])
 {
-	return contain(arg, ";") == -1 && contain(arg, "^n") == -1;
+	// '"' too: the IP paths pass the argument quoted, and a quote would end that early
+	return contain(arg, ";") == -1 && contain(arg, "^n") == -1 && contain(arg, "^"") == -1;
+}
+
+/**
+ * Makes a free-text argument (a kick/ban reason) safe inside a quoted server_cmd()
+ * argument: a newline would end the command and a quote the argument.
+ */
+sanitizeQuotedArg(arg[], len)
+{
+	replace_string(arg, len, "^n", " ");
+	replace_string(arg, len, "^"", "'");
+}
+
+/**
+ * The minutes argument goes into server_cmd() unquoted ("banid %s %s"), so it is
+ * rewritten as the number it parses to.
+ */
+normalizeMinutes(minutes[], len)
+{
+	num_to_str(str_to_num(minutes), minutes, len);
 }
 
 public cmdUnban(id, level, cid)
@@ -252,17 +273,18 @@ public cmdUnban(id, level, cid)
 		}
 	}
 	
+	// The IP path is quoted, but a newline still ends the command (alliedmodders/amxmodx#1085)
+	if(!isCommandArgSafe(arg))
+	{
+		console_print(id, "%l", "CL_NOT_FOUND");
+		return PLUGIN_HANDLED;
+	}
+
 	if (contain(arg, ".") != -1)
 	{
 		server_cmd("removeip ^"%s^";writeip", arg)
 		console_print(id, "[AMXX] %L", id, "IP_REMOVED", arg)
 	} else {
-		if(!isCommandArgSafe(arg))
-		{
-			console_print(id, "%l", "CL_NOT_FOUND");
-			return PLUGIN_HANDLED;
-		}
-
 		server_cmd("removeid %s;writeid", arg)
 		console_print(id, "[AMXX] %L", id, "AUTHID_REMOVED", arg)
 	}
@@ -304,6 +326,8 @@ public cmdAddBan(id, level, cid)
 	read_argv(1, arg, charsmax(arg))
 	read_argv(2, minutes, charsmax(minutes))
 	read_argv(3, reason, charsmax(reason))
+	normalizeMinutes(minutes, charsmax(minutes))
+	sanitizeQuotedArg(reason, charsmax(reason))
 	
 	trim(arg);
 	
@@ -386,18 +410,19 @@ public cmdAddBan(id, level, cid)
 		
 	}
 	
-	// User has access to ban their target
+	// User has access to ban their target. The IP path is quoted, but a newline still
+	// ends the command (alliedmodders/amxmodx#1085)
+	if(!isCommandArgSafe(arg))
+	{
+		console_print(id, "%l", "CL_NOT_FOUND");
+		return PLUGIN_HANDLED;
+	}
+
 	if (contain(arg, ".") != -1)
 	{
 		server_cmd("addip ^"%s^" ^"%s^";wait;writeip", minutes, arg)
 		console_print(id, "[AMXX] Ip ^"%s^" added to ban list", arg)
 	} else {
-		if(!isCommandArgSafe(arg))
-		{
-			console_print(id, "%l", "CL_NOT_FOUND");
-			return PLUGIN_HANDLED;
-		}
-
 		server_cmd("banid ^"%s^" %s;wait;writeid", minutes, arg)
 		console_print(id, "[AMXX] Authid ^"%s^" added to ban list", arg)
 	}
@@ -423,6 +448,8 @@ public cmdBan(id, level, cid)
 	read_argv(1, target, charsmax(target))
 	read_argv(2, minutes, charsmax(minutes))
 	read_argv(3, reason, charsmax(reason))
+	normalizeMinutes(minutes, charsmax(minutes))
+	sanitizeQuotedArg(reason, charsmax(reason))
 	
 	new player = cmd_target(id, target, CMDTARGET_OBEY_IMMUNITY | CMDTARGET_NO_BOTS | CMDTARGET_ALLOW_SELF)
 	
@@ -510,6 +537,8 @@ public cmdBanIP(id, level, cid)
 	read_argv(1, target, charsmax(target))
 	read_argv(2, minutes, charsmax(minutes))
 	read_argv(3, reason, charsmax(reason))
+	normalizeMinutes(minutes, charsmax(minutes))
+	sanitizeQuotedArg(reason, charsmax(reason))
 	
 	new player = cmd_target(id, target, CMDTARGET_OBEY_IMMUNITY | CMDTARGET_NO_BOTS | CMDTARGET_ALLOW_SELF)
 	

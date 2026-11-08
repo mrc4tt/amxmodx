@@ -18,6 +18,26 @@
 
 extern TraceResult *gfm_tr;
 
+// TR_pHit as an entity index, -1 when there is none. The pointer is checked against the
+// edict array first: a plugin reading the trace in a FM_TraceLine pre hook, before the
+// engine filled it, gets garbage there, and ENTINDEX (FNullEnt too) on garbage is a
+// fatal "Bad entity in IndexOfEdict()" (alliedmodders/amxmodx#1123).
+inline int TraceHitIndex(edict_t *pHit)
+{
+	if (!pHit)
+		return -1;
+
+	const edict_t *pFirst = INDEXENT(0);
+	const intptr_t offset = reinterpret_cast<const char *>(pHit) - reinterpret_cast<const char *>(pFirst);
+	if (!pFirst || offset < 0 || offset % sizeof(edict_t) != 0 || offset / static_cast<intptr_t>(sizeof(edict_t)) >= gpGlobals->maxEntities)
+		return -1;
+
+	if (FNullEnt(pHit))
+		return -1;
+
+	return ENTINDEX(pHit);
+}
+
 //these also don't fit in here but gaben does not care.  GABEN DOES NOT CARE!!!
 extern TraceResult g_tr_2;
 extern clientdata_t g_cd_glb;

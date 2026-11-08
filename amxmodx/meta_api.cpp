@@ -1565,6 +1565,10 @@ void C_CvarValue2(const edict_t *pEdict, int requestId, const char *cvar, const 
 		info = (*iter);
 		if ( info->requestId == requestId )
 		{
+			// Out of the list before the callback: it may drop the client, and
+			// CPlayer::Disconnect() frees every query still listed (use after free).
+			pPlayer->queries.erase(iter);
+
 			if (info->paramLen)
 			{
 				cell arr = prepareCellArray(info->params, info->paramLen);
@@ -1575,7 +1579,6 @@ void C_CvarValue2(const edict_t *pEdict, int requestId, const char *cvar, const 
 					cvar, value);
 			}
 			unregisterSPForward(info->resultFwd);
-			pPlayer->queries.erase(iter);
 			delete [] info->params;
 			delete info;
 

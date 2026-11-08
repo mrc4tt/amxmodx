@@ -227,6 +227,13 @@ void CPluginMngr::clear()
 	m_BlockList.clear();
 }
 
+static CPluginMngr::CPlugin *g_pLoadingPlugin = nullptr;
+
+CPluginMngr::CPlugin* CPluginMngr::loadingPlugin(AMX *amx)
+{
+	return (g_pLoadingPlugin && g_pLoadingPlugin->getAMX() == amx) ? g_pLoadingPlugin : nullptr;
+}
+
 CPluginMngr::CPlugin* CPluginMngr::findPlugin(AMX *amx)
 {
 	CPlugin*a = head;
@@ -313,11 +320,19 @@ CPluginMngr::CPlugin::CPlugin(int i, const char* p, const char* n, char* e, size
 	char* path = build_pathname_r(file, sizeof(file), "%s/%s", p, n);
 	code = 0;
 	memset(&amx, 0, sizeof(AMX));
+
+	// plugin_natives runs inside load_amxscript_ex, before UD_FINDPLUGIN points here;
+	// set_fail_state finds the plugin through g_pLoadingPlugin meanwhile.
+	status = ps_bad_load;
+	g_pLoadingPlugin = this;
 	int err = load_amxscript_ex(&amx, &code, path, e, m, d);
+	g_pLoadingPlugin = nullptr;
 
 	if (err == AMX_ERR_NONE)
 	{
-		status = ps_running;
+		// a plugin that failed itself in plugin_natives stays failed
+		if (status != ps_error)
+			status = ps_running;
 	} else {
 		status = ps_bad_load;
 	}
