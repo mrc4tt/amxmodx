@@ -111,6 +111,14 @@ bundle_reapi() { # bundle_reapi <cstrike package dir> <linux|windows>
 	cp "$REAPI_DIR"/x/addons/amxmodx/scripting/include/*.inc "$dest/scripting/include/"
 }
 
+# The build output (every compiler call) goes to dist/build-<platform>.log; its end is
+# shown only when the build fails.
+build_failed() {
+	echo "== $1 build FAILED, last lines of dist/build-$1.log:" >&2
+	grep -v '^\[[0-9]*\] \(g++\|gcc\|cl\|cp\|ar\|link\|rc\) ' "$OUT/build-$1.log" | tail -40 >&2
+	die "$1 build failed"
+}
+
 # --- Linux ---------------------------------------------------------------------------
 echo "== linux: docker image $LINUX_IMAGE"
 docker build -q -t "$LINUX_IMAGE" -f docker/Dockerfile.linux docker >/dev/null
@@ -119,7 +127,8 @@ docker run --rm -v "$ROOT:/src:ro" -v "$OUT:/out" "${GIT_ENV[@]}" --entrypoint b
 	python3 ../configure.py --enable-optimize --metamod=/deps/metamod-am --hlsdk=/deps/hlsdk --mysql=/deps/mysql-5.5
 	ambuild
 	cp -r packages /out/linux
-	chown -R $(id -u):$(id -g) /out/linux"
+	chown -R $(id -u):$(id -g) /out/linux" > "$OUT/build-linux.log" 2>&1 || build_failed linux
+echo "== linux: built ($(grep -c '^\[' "$OUT/build-linux.log") steps, log dist/build-linux.log)"
 bundle_reapi "$OUT/linux/cstrike" linux
 for pkg in "${PACKAGES[@]}"; do
 	[[ -d "$OUT/linux/$pkg/addons" ]] || die "linux package $pkg missing"
@@ -174,18 +183,17 @@ if (( WINDOWS )); then
 		export PYTHONPATH='z:\\deps\\ambuild' CC=cl CXX=cl AMBUILD_ABSOLUTE_INCLUDES=1
 		rm -rf /work && cp -r /src /work && rm -rf /work/build && mkdir /work/build && cd /work/build
 		wine64 /winpy/tools/python.exe 'z:\\work\\configure.py' --enable-optimize '--metamod=z:\\deps\\metamod-am' '--hlsdk=z:\\deps\\hlsdk' '--mysql=z:\\deps\\mysql-5.5' '--nasm=z:\\deps\\nasm\\nasm.exe' 2>&1 | cat
-		# Under heavy parallelism cl under Wine now and then misses an existing header (a
-		# different file each time). AMBuild is incremental, so a rerun only redoes what
-		# failed; fewer jobs make the misses rare.
+		# AMBuild is incremental: a second run only redoes what failed, should Wine trip once.
 		ok=0
-		for try in 1 2 3 4; do
+		for try in 1 2; do
 			if wine64 /winpy/tools/python.exe -c 'import sys, ambuild2.run as r; sys.argv = [\"ambuild\", \"-j\", \"8\"]; r.cli_run()' 2>&1 | cat; then ok=1; break; fi
 			echo \"== windows: AMBuild attempt \$try failed, retrying\"
 		done
 		test \$ok = 1
 		test -d packages/base/addons
 		cp -r packages /out/windows
-		chown -R $(id -u):$(id -g) /out/windows"
+		chown -R $(id -u):$(id -g) /out/windows" > "$OUT/build-windows.log" 2>&1 || build_failed windows
+	echo "== windows: built ($(grep -c '^\[' "$OUT/build-windows.log") steps, log dist/build-windows.log)"
 	bundle_reapi "$OUT/windows/cstrike" windows
 	for pkg in "${PACKAGES[@]}"; do
 		[[ -d "$OUT/windows/$pkg/addons" ]] || die "windows package $pkg missing"
