@@ -186,7 +186,10 @@ if (( WINDOWS )); then
 		# AMBuild is incremental: a second run only redoes what failed, should Wine trip once.
 		ok=0
 		for try in 1 2; do
-			if wine64 /winpy/tools/python.exe -c 'import sys, ambuild2.run as r; sys.argv = [\"ambuild\", \"-j\", \"8\"]; r.cli_run()' 2>&1 | cat; then ok=1; break; fi
+			# cl /Zi starts mspdbsrv.exe, which inherits the pipe to cat and idles ~10 minutes
+			# before it exits, so cat (and the build) only finished then. wineserver -k ends it
+			# once AMBuild is done; the subshell keeps AMBuild's exit status.
+			if { wine64 /winpy/tools/python.exe -c 'import sys, ambuild2.run as r; sys.argv = [\"ambuild\", \"-j\", \"8\"]; r.cli_run()'; rc=\$?; wineserver -k; exit \$rc; } 2>&1 | cat; then ok=1; break; fi
 			echo \"== windows: AMBuild attempt \$try failed, retrying\"
 		done
 		test \$ok = 1
