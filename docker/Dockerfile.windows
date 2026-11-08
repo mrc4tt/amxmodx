@@ -1,0 +1,18 @@
+# Windows build: real MSVC under Wine (msvc-wine:latest, built on RE by `server-ops msvc-image`),
+# made able to run 32-bit programs. AMBuild's compiler detection (API v2_0) builds a test
+# program for the x86 target and runs it, which a wine64-only prefix cannot do.
+#
+# Installing wine32 points /usr/bin/wine at the 32-bit loader and drops wine64 from PATH,
+# which msvc-wine's wrappers need (cl then hangs). So wine64 is linked back, and a fresh
+# prefix is created with both loaders present so it has syswow64.
+ARG BASE=msvc-wine:latest
+FROM ${BASE}
+
+RUN dpkg --add-architecture i386 \
+ && apt-get update \
+ && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends wine32:i386 \
+ && rm -rf /var/lib/apt/lists/* \
+ && ln -sf /usr/lib/wine/wine64 /usr/local/bin/wine64
+
+ENV WINEDEBUG=-all WINEPREFIX=/root/.wine-wow64
+RUN wine64 wineboot -i >/dev/null 2>&1; wineserver -w; test -d "$WINEPREFIX/drive_c/windows/syswow64"
